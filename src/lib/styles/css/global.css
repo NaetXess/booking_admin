@@ -1,0 +1,29 @@
+@import url("$lib/styles/css/template/sidebar.css");
+
+:root {
+    --bg-color: #f46481;
+}
+
+.page-title {
+    font-size: 25px;
+    font-weight: bolder;
+}
+
+.table-row-tools {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+}
+
+.table-row-tools i {
+    font-size: 18px;
+    cursor: pointer;
+}
+
+.table-row-tools i.edit {
+    color: #ffc343;
+}
+
+.table-row-tools i.delete {
+    color: rgb(238, 41, 90);
+}

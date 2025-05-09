@@ -1,0 +1,65 @@
+@import 'bootstrap/scss/functions';
+@import 'bootstrap/scss/variables';
+
+$customColorsLight: (
+    'primary': #ff7a30,
+    'secondary':#7b7b7b,
+    'warning': #e99518,
+    'danger': #ec1f67,
+    'success': #27e54d,
+    'dark': #3d3d3d,
+    
+    
+);
+
+// 'dark-orange':#8f7959,
+
+$theme-colors: map-merge($theme-colors, $customColorsLight) ;
+
+@import 'bootstrap/scss/bootstrap';
+
+:root {
+	--bs-body-font-family: 'Poppins', sans-serif;
+
+   
+
+    font-size: 14px;
+}
+
+.bg-gradient-main{
+   background: linear-gradient(135deg, rgba(255,255,255,1) 29%, rgb(224, 224, 205) 100%),
+}
+
+[data-bs-theme=dark]:root{
+    color-scheme: dark;
+    --bs-body-bg: #1b1b1b;
+    --bg-primary:#3B3B2F;
+    --card-bg:#2b2b2b;
+    --card-bg-opa:rgba(48, 48, 48, 0.8);
+    --bs-body-color: #ccc3c3;
+    --primary:#ff7a30;
+    --color-primary:#ff7a30;
+    --purple: rgb(134, 5, 240);
+    --extra-card-bg:#4b4b4b;
+
+    .text-dark-orange{
+        color: #8f7959;
+    }
+}
+
+[data-bs-theme=light]:root{
+    color-scheme: ligth;
+    --bs-body-bg: #ffffff;
+    --bg-primary:#3B3B2F;
+    --card-bg:#ffffff;
+    --card-bg-opa:rgba(255, 255, 255, 0.8);
+    --bs-body-color: #000000;
+    --primary:#ff7a30;
+    --color-primary:#ff7a30;
+    --purple: rgb(134, 5, 240);
+    --extra-card-bg:#fff3e0;
+
+    .text-dark-orange{
+        color: #9e9b9a;
+    }
+}

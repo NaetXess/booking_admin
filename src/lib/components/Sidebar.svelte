@@ -4,6 +4,8 @@
 	import { currentTheme } from '@constants/constant';
 	import { onMount } from 'svelte';
 
+	$: $page.url.pathname, detectActiveEl();
+
 	export let windowWidth;
 
 	function changeActiveLink(_activeElId) {
@@ -17,15 +19,33 @@
 		});
 	}
 
-	onMount(() => {
+	function detectActiveEl(params) {
 		let els = document.querySelectorAll('.navs .nav-item');
 
 		els.forEach((element) => {
 			element.classList.remove('active');
-			if (element.querySelector(`a[href='${$page.url.pathname}']`)) {
-				element.classList.add('active');
+
+			// Elementin içindeki a etiketini (linki) bul
+			const link = element.querySelector('a');
+
+			if (link) {
+				const href = link.getAttribute('href'); // Örn: "/reservations" veya "/"
+
+				// 1. Kural: Eğer link Anasayfa ("/") ise sadece birebir eşleşmede aktif et
+				// (Aksi halde tüm linkler "/" ile başladığı için Anasayfa hep aktif kalır)
+				if (href === '/' && $page.url.pathname === '/') {
+					element.classList.add('active');
+				}
+				// 2. Kural: Eğer link "/" değilse ve mevcut sayfa bu link ile "BAŞLIYORSA" aktif et
+				else if (href !== '/' && $page.url.pathname.startsWith(href)) {
+					element.classList.add('active');
+				}
 			}
 		});
+	}
+
+	onMount(() => {
+		detectActiveEl();
 	});
 </script>
 
@@ -50,58 +70,44 @@
 		<div class="navs">
 			<ul>
 				<li id="nav-home" class="nav-item active">
-					<a
-						href="/"
-						on:click={(e) => {
-							changeActiveLink(e.target.closest('.nav-item').id);
-						}}><i class="bx bx-home-alt"></i><span>Anasayfa</span></a
+					<a href="/"><i class="bx bx-home-alt"></i><span>Anasayfa</span></a>
+				</li>
+				<li id="nav-reservations" class="nav-item">
+					<a href="/reservations"
+						><i class="bx bx-calendar-event"></i> <span>Rezervasyonlar</span></a
 					>
 				</li>
 				<li id="nav-reservations" class="nav-item">
-					<a
-						href="/reservations"
-						on:click={(e) => {
-							changeActiveLink(e.target.closest('.nav-item').id);
-						}}><i class="bx bx-calendar-event"></i> <span>Rezervasyonlar</span></a
+					<a href="/reservation-plans"
+						><i class="bx bx-sync"></i> <span>Rezervasyon Planları</span></a
 					>
+				</li>
+				<li id="nav-customers" class="nav-item">
+					<a href="/customers"><i class="bx bx-user-pin"></i> <span>Müşteriler</span></a>
+				</li>
+				<li id="nav-finance" class="nav-item">
+					<a href="/finance"><i class="bx bx-wallet"></i> <span>Finans</span></a>
 				</li>
 				<li class="nav-seperator">
 					<div>Tanımlar</div>
 				</li>
-				<li id="nav-services" class="nav-item">
-					<a
-						href="/services"
-						on:click={(e) => {
-							changeActiveLink(e.target.closest('.nav-item').id);
-						}}><i class="bx bx-alarm"></i><span>Hizmetler</span></a
-					>
-				</li>
 				<li id="nav-units" class="nav-item">
-					<a
-						href="/units"
-						on:click={(e) => {
-							changeActiveLink(e.target.closest('.nav-item').id);
-						}}><i class="bx bx-spreadsheet"></i><span>Birimler</span></a
-					>
+					<a href="/units"><i class="bx bx-spreadsheet"></i><span>Kaynaklar</span></a>
+				</li>
+				<li id="nav-services" class="nav-item">
+					<a href="/services"><i class="bx bx-alarm"></i><span>Hizmetler</span></a>
 				</li>
 				<li id="nav-departments" class="nav-item">
-					<a
-						href="/departments"
-						on:click={(e) => {
-							changeActiveLink(e.target.closest('.nav-item').id);
-						}}><i class="bx bx-store"></i> <span>Departmanlar</span></a
-					>
+					<a href="/departments"><i class="bx bx-store"></i> <span>Departmanlar</span></a>
 				</li>
 				<li class="nav-seperator">
-					<div>Firma</div>
+					<div>Firma & Panel</div>
+				</li>
+				<li id="nav-users" class="nav-item">
+					<a href="/users"><i class="bx bx-user"></i> <span>Kullanıcılar</span></a>
 				</li>
 				<li id="nav-company" class="nav-item">
-					<a
-						href="/company"
-						on:click={(e) => {
-							changeActiveLink(e.target.closest('.nav-item').id);
-						}}><i class="bx bx-buildings"></i> <span>Firma</span></a
-					>
+					<a href="/company"><i class="bx bx-buildings"></i> <span>Firma</span></a>
 				</li>
 			</ul>
 		</div>

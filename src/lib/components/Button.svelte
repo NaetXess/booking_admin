@@ -3,6 +3,7 @@
 
 	export let id = '';
 	export let title = '';
+	export let disabled;
 
 	export let primary;
 	export let secondary;
@@ -24,7 +25,9 @@
 	});
 </script>
 
-<button {id} class="t-btn" on:click style="background-color: {backgroundColor};">{title}</button>
+<button {id} {disabled} class="t-btn" on:click style="background-color: {backgroundColor};"
+	>{title}</button
+>
 
 <style>
 	.t-btn {

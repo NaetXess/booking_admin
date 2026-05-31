@@ -1,4 +1,6 @@
 @import url("$lib/styles/css/template/sidebar.css");
+@import url("$lib/styles/css/template/table.css");
+
 
 :root {
     --bg-color: #f46481;
@@ -26,4 +28,206 @@
 
 .table-row-tools i.delete {
     color: rgb(238, 41, 90);
+}
+
+
+/* Tablolarda ki BADGE'ler */
+.tools {
+    display: flex;
+    justify-content: end;
+    gap: 10px;
+}
+
+.tools button {
+    border: 0;
+    width: 40px;
+    height: 40px;
+    font-size: 22px;
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    box-shadow: 0 0 8px rgba(0, 0, 0, 0.15);
+    transition: all ease 150ms;
+}
+
+.tools button.primary {
+    color: rgb(25, 221, 25);
+    background-color: rgb(204, 255, 204);
+}
+
+.tools button.danger {
+    color: rgb(241, 40, 84);
+    background-color: rgb(255, 213, 222);
+}
+
+.tools button:hover {
+    transform: scale(1.05);
+}
+
+.change-unit-active .info {
+    font-size: 12px;
+}
+
+button.active-status-selection {
+    border: 0;
+    background-color: red;
+    width: 60%;
+    padding: 3px 15px;
+    border-radius: 4px;
+    box-shadow: 0 0 8px rgba(0, 0, 0, 0.15);
+}
+
+button.active-status-selection.danger {
+    background-color: rgba(255, 110, 139, 0.25);
+    color: #ff5a7b;
+}
+
+button.active-status-selection.primary {
+    background-color: rgba(88, 180, 255, 0.25);
+    color: rgb(69, 171, 255);
+}
+
+.info span {
+    font-weight: bold;
+}
+
+.info span.primary {
+    color: rgb(69, 171, 255);
+}
+
+.info span.danger {
+    color: #ff5a7b;
+}
+
+label {
+    font-size: 11px;
+    font-weight: 700;
+    color: #7a8699;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    margin-bottom: 5px;
+}
+
+
+/* ─── Section ──────────────────────────────────────────── */
+
+.section-title {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 13px;
+    font-weight: 700;
+    color: #252c38;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin-bottom: 18px;
+}
+
+.section-num {
+    width: 24px;
+    height: 24px;
+    border-radius: 6px;
+    background: linear-gradient(135deg, #f5365c, #f4226d);
+    color: white;
+    font-size: 10px;
+    font-weight: 800;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    letter-spacing: 0;
+}
+
+.divider {
+    height: 1px;
+    background: #f0f2f5;
+    margin: 28px 0 !important;
+}
+
+/* ─── /Section ──────────────────────────────────────────── */
+
+/* ─── Header ────────────────────────────────────────────────────── */
+.page-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 24px;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+.page-title {
+    font-size: 20px;
+    font-weight: 700;
+    color: #252c38;
+    margin: 0 0 2px 0;
+}
+
+.page-sub {
+    font-size: 13px;
+    color: #9aa3b0;
+    margin: 0;
+}
+
+.back-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 16px;
+    background: white;
+    border: 1.5px solid #ebedf0;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 500;
+    color: #445471;
+    cursor: pointer;
+    transition: all 150ms ease;
+    font-family: inherit;
+}
+
+.back-btn:hover {
+    border-color: #f5365c;
+    color: #f5365c;
+}
+
+.back-btn i {
+    font-size: 16px;
+}
+
+/* ─── Status Toggle ─────────────────────────────────────────────── */
+.status-toggle {
+    display: flex;
+    gap: 8px;
+}
+
+.toggle-btn {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    padding: 8px 16px;
+    border: 1.5px solid #ebedf0;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    color: #7a8699;
+    background: #f7f8fa;
+    cursor: pointer;
+    transition: all 150ms ease;
+    font-family: inherit;
+}
+
+.toggle-btn.active {
+    border-color: #2dce89;
+    color: #2dce89;
+    background: rgba(45, 206, 137, 0.07);
+}
+
+.toggle-btn.danger.active-danger {
+    border-color: #fb6340;
+    color: #fb6340;
+    background: rgba(251, 99, 64, 0.07);
 }

@@ -3,34 +3,51 @@
 	import Card from '@components/Card.svelte';
 	import Button from '@components/Button.svelte';
 	import { goto } from '$app/navigation';
-	import { Bookable } from '@controllers/bookable';
+	import { Resource } from '@controllers/resource';
 	import { formatDate, getCookie, closeDropdown } from '@utils/function';
 	import TableLoader from '@components/loaders/TableLoader.svelte';
 	import DataTable from '@components/DataTable.svelte';
 	import Badge from '@components/Badge.svelte';
 	import Dropdown from '@components/Dropdown.svelte';
+	import PageHeader from '@components/PageHeader.svelte';
+	import Modal from '@components/Modal.svelte';
+	import Confirmation from '@components/helpers/Confirmation.svelte';
 
-	let units = [];
+	let resources = [];
 	let loading = false;
 
 	// qu --> quick updatder variable
 	let quActive = 1;
+
+	// DELETE
+	let showModal = false;
+	let selectedResource;
+
+	async function handleDeleteResource() {
+		let res = await Resource.delete(selectedResource.id);
+		if (res) {
+			selectedResource = null;
+			resources = resources.filter((x) => x.id != res.data.id);
+		}
+
+		showModal = false;
+	}
 
 	onMount(async () => {
 		loading = true;
 
 		let promises = [];
 
-		promises.push(Bookable.getBookables({ company_id: getCookie('company_id') }));
+		promises.push(Resource.getAll());
 
 		const [deptData] = await Promise.all(promises);
-		units = deptData;
+		resources = deptData;
 
 		loading = false;
 	});
 </script>
 
-<div class="d-flex justify-content-between align-items-center">
+<!-- <div class="d-flex justify-content-between align-items-center">
 	<h5 class="my-5 page-title">Birimler</h5>
 	<Button
 		title="Yeni"
@@ -39,11 +56,23 @@
 			goto('/units/create/new');
 		}}
 	/>
-</div>
+</div> -->
+
+<svelte:head>
+	<title>Birimler | Xess Booking</title>
+	<meta name="description" content="Şirketinize ait birimleri yönetin." />
+</svelte:head>
+
+<PageHeader
+	title="Birimler"
+	subTitle="Tüm birimlerinizi bu sayfadan yönetebilirsiniz."
+	url="/units/create/new"
+	btnTitle="Yeni Birim"
+/>
 
 <Card>
-	<DataTable pageCount="1">
-		<table class="table table-hover">
+	<DataTable data={resources}>
+		<table class="">
 			<thead>
 				<tr>
 					<th scope="col"><div class="p-2">Adı</div></th>
@@ -54,24 +83,34 @@
 				</tr>
 			</thead>
 			<tbody>
-				{#if !loading && units.length > 0}
-					{#each units as unit}
+				{#if loading}
+					<tr>
+						<td colspan="7" style="padding: 0;">
+							<div class="empty-row">
+								<!-- İçindeki div flex oldu -->
+								<i class="bx bx-loader-alt bx-spin"></i>
+								Yükleniyor…
+							</div>
+						</td>
+					</tr>
+				{:else if resources && resources.length > 0}
+					{#each resources as resource}
 						<tr>
-							<td><div class="p-2">{unit.name}</div></td>
-							<td><div class="p-2 text-center">{formatDate(unit.createdat, 9)}</div></td>
+							<td><div class="bold">{resource.data.name}</div></td>
+							<td><div class="text-center">{formatDate(resource.createdat, 9)}</div></td>
 							<td>
-								<div class="p-2 text-center">
-									{#if unit.status == 0}
+								<div class="text-center">
+									{#if resource.status == 0}
 										<Badge danger>Pasif</Badge>
-									{:else if unit.status == 1}
+									{:else if resource.status == 1}
 										<Badge primary>Aktif</Badge>
 									{/if}
 								</div>
 							</td>
 							<td>
-								<div class="p-2 text-center">
-									<Dropdown dropup id="quick-updater-dropdown-{unit.id}">
-										{#if unit.active == 0}
+								<div class="text-center">
+									<Dropdown dropup id="quick-updater-dropdown-{resource.id}">
+										{#if resource.active == 0}
 											<Badge
 												danger
 												dropdown
@@ -79,7 +118,7 @@
 													quActive = 1;
 												}}>Pasif</Badge
 											>
-										{:else if unit.active == 1}
+										{:else if resource.active == 1}
 											<Badge
 												primary
 												dropdown
@@ -94,7 +133,7 @@
 												<button
 													class="danger"
 													on:click={() => {
-														closeDropdown(`quick-updater-dropdown-${unit.id}`);
+														closeDropdown(`quick-updater-dropdown-${resource.id}`);
 													}}
 												>
 													<i class="bx bx-x"></i>
@@ -138,92 +177,54 @@
 								</div>
 							</td>
 							<td>
-								<div class="p-2 table-row-tools">
+								<div class="row-actions">
 									<!-- svelte-ignore a11y-click-events-have-key-events -->
 									<!-- svelte-ignore a11y-no-static-element-interactions -->
-									<i
-										class="bx bx-edit-alt edit"
+									<span
+										class="action-btn edit"
+										on:click={() => goto(`/units/update/${resource.id}`)}
+									>
+										<i class="bx bx-edit-alt"></i>
+									</span>
+									<!-- svelte-ignore a11y-click-events-have-key-events -->
+									<!-- svelte-ignore a11y-no-static-element-interactions -->
+									<span
+										class="action-btn delete"
 										on:click={() => {
-											goto(`/units/update/${unit.id}`);
+											showModal = true;
+											selectedResource = resource;
 										}}
-									></i>
-									<i class="bx bx-trash delete"></i>
+									>
+										<i class="bx bx-trash"></i>
+									</span>
 								</div>
 							</td>
 						</tr>
 					{/each}
 				{:else}
-					<!-- <TableLoader /> -->
+					<tr>
+						<td colspan="7" style="padding: 0;">
+							<div class="empty-row">
+								<i class="bx bx-calendar-x"></i>
+								Henüz kaynak bulunmuyor.
+							</div>
+						</td>
+					</tr>
 				{/if}
 			</tbody>
 		</table>
 	</DataTable>
 </Card>
+<Modal bind:show={showModal} title="Kaynak Silme">
+	<Confirmation
+		text={`Kaynağı silmek üzeresiniz! İşleme devam edilsin mi?`}
+		on:cancel={() => {
+			showModal = false;
+			selectedResource = null;
+		}}
+		on:confirm={handleDeleteResource}
+	/>
+</Modal>
 
 <style>
-	.tools {
-		display: flex;
-		justify-content: end;
-		gap: 10px;
-	}
-	.tools button {
-		border: 0;
-		width: 40px;
-		height: 40px;
-		font-size: 22px;
-		border-radius: 50%;
-		display: flex;
-		justify-content: center;
-		align-items: center;
-		box-shadow: 0 0 8px rgba(0, 0, 0, 0.15);
-		transition: all ease 150ms;
-	}
-
-	.tools button.primary {
-		color: rgb(25, 221, 25);
-		background-color: rgb(204, 255, 204);
-	}
-
-	.tools button.danger {
-		color: rgb(241, 40, 84);
-		background-color: rgb(255, 213, 222);
-	}
-
-	.tools button:hover {
-		transform: scale(1.05);
-	}
-
-	.change-unit-active .info {
-		font-size: 12px;
-	}
-	button.active-status-selection {
-		border: 0;
-		background-color: red;
-		width: 60%;
-		padding: 3px 15px;
-		border-radius: 4px;
-		box-shadow: 0 0 8px rgba(0, 0, 0, 0.15);
-	}
-
-	button.active-status-selection.danger {
-		background-color: rgba(255, 110, 139, 0.25);
-		color: #ff5a7b;
-	}
-
-	button.active-status-selection.primary {
-		background-color: rgba(88, 180, 255, 0.25);
-		color: rgb(69, 171, 255);
-	}
-
-	.info span {
-		font-weight: bold;
-	}
-
-	.info span.primary {
-		color: rgb(69, 171, 255);
-	}
-
-	.info span.danger {
-		color: #ff5a7b;
-	}
 </style>

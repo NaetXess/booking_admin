@@ -3,10 +3,11 @@
 
 	export let primary;
 	export let danger;
+
 	export let dropdown;
 	export let dropdownCloseCondition = 'outside';
 
-	let theme;
+	export let theme;
 	let elementAttributes = {};
 
 	onMount(() => {
@@ -44,5 +45,25 @@
 	.t-badge.primary {
 		background-color: rgba(88, 180, 255, 0.25);
 		color: rgb(69, 171, 255);
+	}
+
+	.t-badge.purple {
+		background-color: #f3e8ff;
+		color: #7e22ce;
+	}
+
+	.t-badge.orange {
+		background-color: #ffedd5;
+		color: #c2410c;
+	}
+
+	.t-badge.pink {
+		background-color: #fce7f3;
+		color: #be185d;
+	}
+
+	.t-badge.green {
+		background-color: #dcfce7;
+		color: #15803d;
 	}
 </style>

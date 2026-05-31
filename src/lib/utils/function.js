@@ -1,13 +1,16 @@
 import { apiUrl } from '$lib/config/config';
 import moment from 'moment';
 import Swal from 'sweetalert2';
+import { goto } from '$app/navigation';
+import { parsePhoneNumber, isValidPhoneNumber } from 'libphonenumber-js';
 
 function request(route, method, body = false, headers = false, isformdata = false, delay = false) {
 	let url = apiUrl;
 	return new Promise((resolve, reject) => {
 		let options = {
 			method,
-			headers: {}
+			headers: {},
+			credentials: 'include'
 		};
 
 		if (!isformdata) {
@@ -42,7 +45,7 @@ function request(route, method, body = false, headers = false, isformdata = fals
 							// hideLoader();
 						}
 
-						$goto('/login');
+						goto('/login');
 					}, 1000);
 					throw new Error('Login Reqiure !');
 				} else return response.json();
@@ -215,7 +218,7 @@ export function getCookie(cname) {
 	}
 	return '';
 }
-
+// { company_id: getCookie('company_id') } örnek
 export function buildQuery(params) {
 	let queries = [];
 	for (const key in params) {
@@ -226,39 +229,66 @@ export function buildQuery(params) {
 	return queries.length ? `?${queries.join('&')}` : '';
 }
 
-export function formatDate(date, type) {
-	let _arr = new Date(date).toLocaleString().toString().split('');
+export function getUTCTime(date, time) {
+	const localDate = new Date(`${date}T${time}`);
 
-	let _dateStr = `${_arr[6]}${_arr[7]}${_arr[8]}${_arr[9]}-${_arr[3]}${_arr[4]}-${_arr[0]}${_arr[1]}T${_arr[11]}${_arr[12]}:${_arr[14]}${_arr[15]}:00.000Z`;
-	date = _dateStr;
+	return localDate.toISOString();
+}
 
-	if (type == '1') {
-		let formattedDate = moment(date).utc().format('DD MM');
-		formattedDate = getTrDate(formattedDate);
-		return formattedDate;
-	} else if (type == '2') {
-		return moment(date).utc().format('YYYY-MM-DD HH:mm');
-	} else if (type == '3') {
-		return moment(date).utc().format('YYYY-MM-DD  HH:mm:ss.000');
-	} else if (type == '4') {
-		return moment(date).utc().format('YYYY-MM-DD');
-	} else if (type == '5') {
-		return moment(date).utc().format('HH:mm');
-	} else if (type == '6') {
-		return moment(date).utc().format('DD.MM.YYYY HH:mm');
-	} else if (type == '7') {
-		let formattedDate = moment(date).utc().format('DD MM HH:mm');
-		formattedDate = getTrDate(formattedDate);
-		return formattedDate;
-	} else if (type == '8') {
-		let formattedDate = moment(date).utc().format('DD MM');
-		formattedDate = getTrDate(formattedDate);
-		return formattedDate;
-	} else if (type == '9') {
-		let formattedDate = moment(date).utc().format('DD MM YYYY');
-		formattedDate = getTrDate(formattedDate);
+export function getTimeZone() {
+	return Intl.DateTimeFormat().resolvedOptions().timeZone;
+}
 
-		return formattedDate;
+export function formatDate(date, type = 9) {
+	// let _arr = new Date(date).toLocaleString().toString().split('');
+
+	// let _dateStr = `${_arr[6]}${_arr[7]}${_arr[8]}${_arr[9]}-${_arr[3]}${_arr[4]}-${_arr[0]}${_arr[1]}T${_arr[11]}${_arr[12]}:${_arr[14]}${_arr[15]}:00.000Z`;
+	// date = _dateStr;
+
+	switch (type) {
+		case 1: {
+			let formattedDate = moment(date).utc().format('DD MM');
+			return getTrDate(formattedDate);
+		}
+
+		case 2:
+			return moment(date).utc().format('YYYY-MM-DD HH:mm');
+
+		case 3:
+			return moment(date).utc().format('YYYY-MM-DD  HH:mm:ss.000');
+
+		case 4:
+			return moment(date).utc().format('YYYY-MM-DD');
+
+		case 5:
+			return moment(date).format('HH:mm');
+
+		case 6:
+			return moment(date).utc().format('DD.MM.YYYY HH:mm');
+
+		case 7: {
+			let formattedDate = moment(date).utc().format('DD MM HH:mm');
+			return getTrDate(formattedDate);
+		}
+
+		case 8: {
+			let formattedDate = moment(date).utc().format('DD MM');
+			return getTrDate(formattedDate);
+		}
+
+		case 9: {
+			let formattedDate = moment(date).utc().format('DD MM YYYY');
+			return getTrDate(formattedDate);
+		}
+
+		case 10: {
+			let formattedDate = moment(date).utc().format('DD MM YYYY HH:mm');
+
+			return getTrDate(formattedDate);
+		}
+
+		default:
+			return null;
 	}
 }
 
@@ -307,6 +337,25 @@ function getTrDate(date) {
 	}
 	if (_date.length == 10) {
 		return _date[0] + _date[1] + ' ' + _string + ' ' + _date[6] + _date[7] + _date[8] + _date[9];
+	} else if (_date.length == 16) {
+		return (
+			_date[0] +
+			_date[1] +
+			' ' +
+			_string +
+			' ' +
+			_date[6] +
+			_date[7] +
+			_date[8] +
+			_date[9] +
+			_date[10] +
+			' ' +
+			_date[11] +
+			_date[12] +
+			':' +
+			_date[14] +
+			_date[15]
+		);
 	} else if (_date.length > 10) {
 		return (
 			_date[0] +
@@ -323,4 +372,80 @@ function getTrDate(date) {
 	} else {
 		return _date[0] + _date[1] + ' ' + _string;
 	}
+}
+
+export function initials(name) {
+	if (!name) return '?';
+	const parts = name.trim().split(' ');
+	return (parts[0]?.[0] ?? '') + (parts[1]?.[0] ?? '');
+}
+
+export function avatarColor(name) {
+	const colors = [
+		'#f5365c',
+		'#f56036',
+		'#ffd600',
+		'#2dce89',
+		'#11cdef',
+		'#5e72e4',
+		'#fb6340',
+		'#f3a4b5'
+	];
+	let hash = 0;
+	for (let i = 0; i < (name ?? '!').length; i++)
+		hash = (name ?? '!').charCodeAt(i) + ((hash << 5) - hash);
+	return colors[Math.abs(hash) % colors.length];
+}
+
+export function formatPhoneDisplay(countryCode, rawStr, format = 'national') {
+	if (!rawStr || !countryCode) return '';
+	const full = countryCode + rawStr;
+	if (!isValidPhoneNumber(full)) return rawStr; // geçersizse orijinali döndür
+	const phone = parsePhoneNumber(full);
+	switch (format) {
+		case 'national':
+			return phone.formatNational(); // "0530 123 45 67"
+		case 'international':
+			return phone.formatInternational(); // "+90 530 123 45 67"
+		case 'e164':
+			return phone.format('E.164'); // "+905301234567"
+		case 'uri':
+			return phone.getURI(); // "tel:+90-530-123-45-67"
+		case 'input':
+			return phone.formatNational().replace(/^0/, '');
+		default:
+			return phone.formatNational();
+	}
+}
+
+export function cropText(val, limit) {
+	if (val) {
+		let _array = val.toString().split('');
+		let _text = '';
+		if (_array.length) {
+			for (let i = 0; i < _array.length; i++) {
+				if (i <= limit) {
+					_text += _array[i];
+				}
+			}
+			if (limit < _array.length - 1) {
+				_text += '. . .';
+			}
+		}
+		return _text;
+	} else {
+		return '';
+	}
+}
+
+export function debounce(func, delay) {
+	let timeout;
+
+	return async function (...args) {
+		clearTimeout(timeout);
+
+		timeout = setTimeout(() => {
+			func.apply(this, args);
+		}, delay);
+	};
 }

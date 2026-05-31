@@ -39,6 +39,12 @@
 </div>
 
 <style>
+	.content {
+		/* Div içi scroll burada --> # içerik kaydırma alanı */
+		overflow: hidden;
+		height: calc(100vh - 71px);
+		overflow: auto;
+	}
 	nav {
 		height: 70px;
 		display: flex;

@@ -24,6 +24,7 @@
 	let bookings = [];
 	let paginationData = loadDefaultPagination();
 	let loading = false;
+	let filteredPaginationData = paginationData;
 	let filteredBookingData = [];
 
 	// QueryParams
@@ -104,6 +105,7 @@
 				sort: params.sort
 			});
 
+			filteredPaginationData = paginationData;
 			bookings = paginationData?.items ?? [];
 			filteredBookingData = bookings;
 		} finally {
@@ -112,13 +114,15 @@
 	}
 	const searchBookings = debounce(async (searchText) => {
 		if (searchText?.length < 2) {
+			filteredPaginationData = paginationData;
 			filteredBookingData = bookings;
 			return;
 		}
 
 		let res = await Search.search({ index: 'bookings', search_text: searchText });
 
-		filteredBookingData = res;
+		filteredPaginationData = res;
+		filteredBookingData = res.items;
 	}, 300);
 
 	// Init
@@ -142,7 +146,7 @@
 <Card>
 	<DataTable
 		{sortingItems}
-		data={paginationData}
+		data={filteredPaginationData}
 		on:pagination={(e) => {
 			page = e.detail.page;
 			handlePagination(loadPageParams());

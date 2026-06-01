@@ -245,44 +245,47 @@ export function formatDate(date, type = 9) {
 	// let _dateStr = `${_arr[6]}${_arr[7]}${_arr[8]}${_arr[9]}-${_arr[3]}${_arr[4]}-${_arr[0]}${_arr[1]}T${_arr[11]}${_arr[12]}:${_arr[14]}${_arr[15]}:00.000Z`;
 	// date = _dateStr;
 
+	// UTC kullanım örneği
+	// let formattedDate = moment(date).format('DD MM');
+
 	switch (type) {
 		case 1: {
-			let formattedDate = moment(date).utc().format('DD MM');
+			let formattedDate = moment(date).format('DD MM');
 			return getTrDate(formattedDate);
 		}
 
 		case 2:
-			return moment(date).utc().format('YYYY-MM-DD HH:mm');
+			return moment(date).format('YYYY-MM-DD HH:mm');
 
 		case 3:
-			return moment(date).utc().format('YYYY-MM-DD  HH:mm:ss.000');
+			return moment(date).format('YYYY-MM-DD  HH:mm:ss.000');
 
 		case 4:
-			return moment(date).utc().format('YYYY-MM-DD');
+			return moment(date).format('YYYY-MM-DD');
 
 		case 5:
 			return moment(date).format('HH:mm');
 
 		case 6:
-			return moment(date).utc().format('DD.MM.YYYY HH:mm');
+			return moment(date).format('DD.MM.YYYY HH:mm');
 
 		case 7: {
-			let formattedDate = moment(date).utc().format('DD MM HH:mm');
+			let formattedDate = moment(date).format('DD MM HH:mm');
 			return getTrDate(formattedDate);
 		}
 
 		case 8: {
-			let formattedDate = moment(date).utc().format('DD MM');
+			let formattedDate = moment(date).format('DD MM');
 			return getTrDate(formattedDate);
 		}
 
 		case 9: {
-			let formattedDate = moment(date).utc().format('DD MM YYYY');
+			let formattedDate = moment(date).format('DD MM YYYY');
 			return getTrDate(formattedDate);
 		}
 
 		case 10: {
-			let formattedDate = moment(date).utc().format('DD MM YYYY HH:mm');
+			let formattedDate = moment(date).format('DD MM YYYY HH:mm');
 
 			return getTrDate(formattedDate);
 		}

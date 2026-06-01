@@ -107,15 +107,19 @@
 	<div class="table-footer">
 		<span class="record-info">
 			{#if data}
-				Toplam <strong>{data.total_rows}</strong> kayıt'tan
+				{#if data.page == 0 && data.limit == 0}
+					Toplam <strong>{data.total_rows}</strong> kayıt bulundu
+				{:else}
+					Toplam <strong>{data.total_rows}</strong> kayıt'tan
 
-				<strong>
-					{(page - 1) * data.limit + 1}
-					-
-					{page * data.limit > data.total_rows ? data.total_rows : page * data.limit}
-				</strong>
+					<strong>
+						{(page - 1) * data.limit + 1}
+						-
+						{page * data.limit > data.total_rows ? data.total_rows : page * data.limit}
+					</strong>
 
-				gösteriliyor
+					gösteriliyor
+				{/if}
 			{/if}
 		</span>
 		<div class="pagination">

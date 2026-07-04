@@ -1,9 +1,9 @@
 <script>
-	import { page } from '$app/stores';
+	import { page } from '$app/state';
 	import { goto } from '$app/navigation';
 
-	const status = $page.status;
-	const message = $page.error?.message ?? 'Sayfa Bulunamadı';
+	const status = page.status;
+	const message = page.error?.message ?? 'Sayfa Bulunamadı';
 </script>
 
 <svelte:head>
@@ -142,7 +142,7 @@
 		</p>
 
 		<div class="actions">
-			<button class="btn-primary" on:click={() => goto('/')}>
+			<button class="btn-primary" onclick={() => goto('/')}>
 				<svg
 					viewBox="0 0 24 24"
 					width="18"
@@ -158,7 +158,7 @@
 				</svg>
 				Ana Sayfaya Dön
 			</button>
-			<button class="btn-ghost" on:click={() => history.back()}>
+			<button class="btn-ghost" onclick={() => history.back()}>
 				<svg
 					viewBox="0 0 24 24"
 					width="18"

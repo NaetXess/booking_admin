@@ -1,19 +1,25 @@
 <script>
+	import { createBubbler } from 'svelte/legacy';
+
+	const bubble = createBubbler();
 	import { createEventDispatcher, onMount } from 'svelte';
 
-	export let type = '';
-	export let classes = '';
-	export let id = '';
-	export let placeholder = '';
-	export let value;
-	export let min;
-	export let max;
-	export let icon;
-
-	export let disabled = false;
-	export let autoFilled = false;
-	export let disableShowPass = false;
-	export let rows = 3;
+	/** @type {{type?: string, classes?: string, id?: string, placeholder?: string, value: any, min: any, max: any, step?: any, icon: any, disabled?: boolean, autoFilled?: boolean, disableShowPass?: boolean, rows?: number}} */
+	let {
+		type = '',
+		classes = '',
+		id = '',
+		placeholder = '',
+		value = $bindable(),
+		min,
+		max,
+		step,
+		icon,
+		disabled = false,
+		autoFilled = false,
+		disableShowPass = false,
+		rows = 3
+	} = $props();
 
 	// export let mainValue = '';
 
@@ -21,26 +27,28 @@
 
 	function changeIcon(el) {
 		const input = document.getElementById(id);
+		const iconEl = el.tagName === 'I' ? el : el.querySelector('i');
+		if (!iconEl || !input) return;
 
-		if (el.classList.contains('bx-hide')) {
-			el.classList.remove('bx-hide');
-			el.classList.add('bx-show');
+		if (iconEl.classList.contains('bx-hide')) {
+			iconEl.classList.remove('bx-hide');
+			iconEl.classList.add('bx-show');
 			input.setAttribute('type', 'text');
-		} else if (el.classList.contains('bx-show')) {
-			el.classList.remove('bx-show');
-			el.classList.add('bx-hide');
+		} else if (iconEl.classList.contains('bx-show')) {
+			iconEl.classList.remove('bx-show');
+			iconEl.classList.add('bx-hide');
 			input.setAttribute('type', 'password');
 		}
 	}
 </script>
 
-<!-- svelte-ignore a11y-click-events-have-key-events -->
-<!-- svelte-ignore a11y-no-static-element-interactions -->
+<!-- svelte-ignore a11y_click_events_have_key_events -->
+<!-- svelte-ignore a11y_no_static_element_interactions -->
 {#if type === 'email'}
 	<div class="input-wrap {autoFilled ? 'auto-fill' : ''}">
 		<i class="bx {icon}"></i>
 		<input
-			on:input
+			oninput={bubble('input')}
 			{disabled}
 			bind:value
 			type="email"
@@ -51,33 +59,38 @@
 		/>
 	</div>
 {:else if type === 'password'}
-	<div class="position-relative">
+	<div class="input-wrap {autoFilled ? 'auto-fill' : ''}">
+		{#if icon}
+			<i class="bx {icon}"></i>
+		{/if}
 		<input
 			{disabled}
 			bind:value
-			on:input
+			oninput={bubble('input')}
 			type="password"
-			class="form-control {classes}"
+			class={classes}
 			{id}
 			{placeholder}
 		/>
 		{#if !disableShowPass}
 			<span
-				on:click={(e) => {
-					changeIcon(e.target);
+				class="pass-toggle"
+				onclick={(e) => {
+					changeIcon(e.currentTarget);
 				}}
 			>
-				<i id="password-icon" class="bx bx-hide"></i>
+				<i class="bx bx-hide"></i>
 			</span>
 		{/if}
 	</div>
 {:else if type === 'textarea'}
-	<textarea on:input bind:value {rows} class={classes} {id} {placeholder}></textarea>
+	<textarea oninput={bubble('input')} bind:value {rows} class={classes} {id} {placeholder}
+	></textarea>
 {:else if type == 'number'}
 	<div class="input-wrap {autoFilled ? 'auto-fill' : ''}">
 		<i class="bx {icon}"></i>
 		<input
-			on:input
+			oninput={bubble('input')}
 			{disabled}
 			bind:value
 			type="number"
@@ -90,18 +103,37 @@
 {:else if type == 'date'}
 	<div class="input-wrap {autoFilled ? 'auto-fill' : ''}">
 		<i class="bx {icon}"></i>
-		<input on:input {disabled} bind:value type="date" class={classes} {id} {min} {max} />
+		<input
+			oninput={bubble('input')}
+			{disabled}
+			bind:value
+			type="date"
+			class={classes}
+			{id}
+			{min}
+			{max}
+		/>
 	</div>
 {:else if type == 'time'}
 	<div class="input-wrap {autoFilled ? 'auto-fill' : ''}">
 		<i class="bx {icon}"></i>
-		<input on:input {disabled} bind:value type="time" class={classes} {id} {min} {max} />
+		<input
+			oninput={bubble('input')}
+			{disabled}
+			bind:value
+			type="time"
+			class={classes}
+			{id}
+			{min}
+			{max}
+			{step}
+		/>
 	</div>
 {:else}
 	<div class="input-wrap {autoFilled ? 'auto-fill' : ''}">
 		<i class="bx {icon}"></i>
 		<input
-			on:input
+			oninput={bubble('input')}
 			{disabled}
 			bind:value
 			type="text"
@@ -114,15 +146,21 @@
 {/if}
 
 <style>
-	#password-icon {
+	.pass-toggle {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		padding: 0 12px;
 		cursor: pointer;
-		font-size: 20px;
-		position: absolute;
-		top: 50%;
-		right: 0;
-		transform: translate(-50%, -50%);
+		color: #c4cad4;
+		transition: color 150ms;
 	}
-	/* Aynı kodlar inputlarda */
+	.pass-toggle:hover {
+		color: #252c38;
+	}
+	.pass-toggle i {
+		font-size: 18px;
+	}
 	.input-wrap {
 		display: flex;
 		align-items: center;

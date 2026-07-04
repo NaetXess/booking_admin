@@ -1,15 +1,17 @@
 <script>
-	import { createEventDispatcher, onMount } from 'svelte';
-	export let data;
-	export let sortingItems = [];
+	import { run } from 'svelte/legacy';
 
-	let pageSize = 10;
-	let page = 1;
-	let sortingParam = 'createdat:desc';
+	import { createEventDispatcher } from 'svelte';
+	/** @type {{data: any, sortingItems?: any, children?: import('svelte').Snippet}} */
+	let { data, sortingItems = [], children } = $props();
+
+	let pageSize = $state(10);
+	let page = $state(1);
+	let sortingParam = $state('createdat:desc');
 	let sort = 'createdat';
 	let order = 'desc';
 
-	let searchText;
+	let searchText = $state();
 	const dispatch = createEventDispatcher();
 
 	function handleSearch(e) {
@@ -32,16 +34,12 @@
 		}
 	}
 
-	$: handlePageSize(pageSize);
-
 	function handlePageSize(newPageSize) {
 		dispatch('pageSize', {
 			page,
 			page_size: newPageSize
 		});
 	}
-
-	$: handleSort(sortingParam);
 
 	function handleSort(_params) {
 		const [newSort, newOrder] = (_params || '').split(':');
@@ -61,6 +59,12 @@
 			});
 		}
 	}
+	run(() => {
+		handlePageSize(pageSize);
+	});
+	run(() => {
+		handleSort(sortingParam);
+	});
 </script>
 
 <!-- Table Card -->
@@ -73,7 +77,7 @@
 				type="text"
 				placeholder="İsim, telefon veya hizmet ara…"
 				bind:value={searchText}
-				on:input={handleSearch}
+				oninput={handleSearch}
 			/>
 		</div>
 		<div class="toolbar-right">
@@ -100,7 +104,9 @@
 
 	<!-- Table -->
 	<div class="table-wrapper">
-		<slot />
+		{#if children}
+			{@render children?.()}
+		{/if}
 	</div>
 
 	<!-- Pagination -->
@@ -124,29 +130,29 @@
 		</span>
 		<div class="pagination">
 			{#if data && data?.total_pages > 0}
-				<!-- svelte-ignore a11y-click-events-have-key-events -->
-				<!-- svelte-ignore a11y-no-static-element-interactions -->
+				<!-- svelte-ignore a11y_click_events_have_key_events -->
+				<!-- svelte-ignore a11y_no_static_element_interactions -->
 				<span
 					class="page-btn"
-					on:click={() => {
+					onclick={() => {
 						handlePagination({ action: 'prev' });
 					}}><i class="bx bx-left-arrow-alt"></i></span
 				>
 				{#each Array(data.total_pages) as _, i}
-					<!-- svelte-ignore a11y-click-events-have-key-events -->
-					<!-- svelte-ignore a11y-no-static-element-interactions -->
+					<!-- svelte-ignore a11y_click_events_have_key_events -->
+					<!-- svelte-ignore a11y_no_static_element_interactions -->
 					<span
-						on:click={() => {
+						onclick={() => {
 							handlePagination({ page: i + 1 });
 						}}
 						class="page-btn {page == i + 1 ? 'active' : ''}">{i + 1}</span
 					>
 				{/each}
-				<!-- svelte-ignore a11y-click-events-have-key-events -->
-				<!-- svelte-ignore a11y-no-static-element-interactions -->
+				<!-- svelte-ignore a11y_click_events_have_key_events -->
+				<!-- svelte-ignore a11y_no_static_element_interactions -->
 				<span
 					class="page-btn"
-					on:click={() => {
+					onclick={() => {
 						handlePagination({ action: 'next' });
 					}}><i class="bx bx-right-arrow-alt"></i></span
 				>

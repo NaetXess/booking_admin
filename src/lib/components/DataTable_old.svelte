@@ -1,9 +1,10 @@
 <script>
 	import { onMount } from 'svelte';
 
-	export let pageCount = 0;
+	/** @type {{pageCount?: number, children?: import('svelte').Snippet}} */
+	let { pageCount = 0, children } = $props();
 
-	let paginationItems = [];
+	let paginationItems = $state([]);
 
 	onMount(() => {
 		if (pageCount > 0) {
@@ -50,7 +51,7 @@
 			<input type="text" placeholder="Kayıt Arayın.." />
 		</div>
 	</div>
-	<slot />
+	{@render children?.()}
 </div>
 
 <style>

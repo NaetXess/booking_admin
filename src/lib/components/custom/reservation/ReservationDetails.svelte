@@ -1,9 +1,12 @@
 <script>
+	import { Booking } from '@controllers/booking';
 	import { createEventDispatcher } from 'svelte';
 	import { initials as getInitials } from '@utils/function';
+	import PaymentList from '@components/custom/finance/PaymentList.svelte';
+	import PaymentForm from '@components/custom/finance/PaymentForm.svelte';
 
-	export let show = false;
-	export let reservation = null;
+	/** @type {{show?: boolean, reservation?: any}} */
+	let { show = $bindable(false), reservation = null } = $props();
 
 	const dispatch = createEventDispatcher();
 
@@ -14,71 +17,91 @@
 		3: { label: 'İptal', icon: 'bx-x-circle', cls: 'status-cancelled' }
 	};
 
-	$: statusInfo = reservation ? statusMap[reservation.status] ?? statusMap[0] : statusMap[0];
+	let statusInfo = $derived(
+		reservation ? statusMap[reservation.status] ?? statusMap[0] : statusMap[0]
+	);
 
 	// checkin_date + checkin_time → okunabilir tarih
-	$: formattedDate = (() => {
-		if (!reservation?.checkin_date) return '—';
-		try {
-			const d = new Date(reservation.checkin_date);
-			return d.toLocaleDateString('tr-TR', {
-				weekday: 'long',
-				year: 'numeric',
-				month: 'long',
-				day: 'numeric'
-			});
-		} catch {
-			return reservation.checkin_date;
-		}
-	})();
+	let formattedDate = $derived(
+		(() => {
+			if (!reservation?.checkin_date) return '—';
+			try {
+				const d = new Date(reservation.checkin_date);
+				return d.toLocaleDateString('tr-TR', {
+					weekday: 'long',
+					year: 'numeric',
+					month: 'long',
+					day: 'numeric'
+				});
+			} catch {
+				return reservation.checkin_date;
+			}
+		})()
+	);
 
 	// "14:30:00" → "14:30"
-	$: checkinTime = reservation?.checkin_time?.slice(0, 5) ?? '—';
-	$: checkoutTime = reservation?.checkout_time?.slice(0, 5) ?? '—';
+	let checkinTime = $derived(reservation?.checkin_time?.slice(0, 5) ?? '—');
+	let checkoutTime = $derived(reservation?.checkout_time?.slice(0, 5) ?? '—');
 
 	// Süre hesaplama (dakika cinsinden)
-	$: durationMin = (() => {
-		if (!reservation?.checkin_time || !reservation?.checkout_time) return null;
-		try {
-			const [h1, m1] = reservation.checkin_time.split(':').map(Number);
-			const [h2, m2] = reservation.checkout_time.split(':').map(Number);
-			const diff = h2 * 60 + m2 - (h1 * 60 + m1);
-			return diff > 0 ? diff : null;
-		} catch {
-			return null;
-		}
-	})();
+	let durationMin = $derived(
+		(() => {
+			if (!reservation?.checkin_time || !reservation?.checkout_time) return null;
+			try {
+				const [h1, m1] = reservation.checkin_time.split(':').map(Number);
+				const [h2, m2] = reservation.checkout_time.split(':').map(Number);
+				const diff = h2 * 60 + m2 - (h1 * 60 + m1);
+				return diff > 0 ? diff : null;
+			} catch {
+				return null;
+			}
+		})()
+	);
 
 	// Telefon: ülke kodu + numara birleştir
-	$: fullPhone = (() => {
-		if (!reservation?.customer_phone && !reservation?.customer.phone) return null;
-		const code = reservation.customer.country_code || reservation.customer_country_code;
-		return code
-			? `${code} ${reservation.customer.phone || reservation.customer_phone}`
-			: reservation.customer.phone || reservation.customer_phone;
-	})();
+	let fullPhone = $derived(
+		(() => {
+			if (!reservation?.customer_phone && !reservation?.customer?.phone) return null;
+			const code = reservation?.customer?.country_code || reservation.customer_country_code;
+			return code
+				? `${code} ${reservation.customer?.phone || reservation.customer_phone}`
+				: reservation?.customer?.phone || reservation.customer_phone;
+		})()
+	);
 
 	// İsim baş harfleri
-	$: initials = getInitials(reservation?.customer.name || reservation?.customer_name);
+	let initials = $derived(getInitials(reservation?.customer?.name || reservation?.customer_name));
 
 	// Kayıt tarihi
-	$: createdLabel = (() => {
-		if (!reservation?.createdat) return null;
-		try {
-			return new Date(reservation.createdat).toLocaleString('tr-TR', {
-				day: '2-digit',
-				month: 'long',
-				year: 'numeric',
-				hour: '2-digit',
-				minute: '2-digit'
-			});
-		} catch {
-			return null;
-		}
-	})();
+	let createdLabel = $derived(
+		(() => {
+			if (!reservation?.createdat) return null;
+			try {
+				return new Date(reservation.createdat).toLocaleString('tr-TR', {
+					day: '2-digit',
+					month: 'long',
+					year: 'numeric',
+					hour: '2-digit',
+					minute: '2-digit'
+				});
+			} catch {
+				return null;
+			}
+		})()
+	);
+
+	// ── Ödeme paneli ─────────────────────────────────────────────
+	let showPaymentForm = $state(false);
+	let paymentListRef = $state(null);
+
+	async function handlePaymentSuccess() {
+		showPaymentForm = false;
+		await paymentListRef?.refresh();
+	}
 
 	function close() {
 		show = false;
+		showPaymentForm = false;
 		dispatch('close');
 	}
 
@@ -87,8 +110,8 @@
 		close();
 	}
 
-	function handleCancel() {
-		dispatch('cancel', reservation);
+	async function handleCancel() {
+		let res = await Booking.updateBookingStatus({ id: reservation.id, status: 3 });
 	}
 
 	function handleBackdrop(e) {
@@ -97,23 +120,23 @@
 </script>
 
 {#if show && reservation}
-	<!-- svelte-ignore a11y-click-events-have-key-events -->
-	<!-- svelte-ignore a11y-no-static-element-interactions -->
-	<div class="rdm-backdrop" on:click={handleBackdrop}>
-		<div class="rdm-modal">
+	<!-- svelte-ignore a11y_click_events_have_key_events -->
+	<!-- svelte-ignore a11y_no_static_element_interactions -->
+	<div class="rdm-backdrop" onclick={handleBackdrop}>
+		<div class="rdm-modal rdm-modal--wide">
 			<!-- ── Header ─────────────────────────────────────────────── -->
 			<div class="rdm-header">
 				<div class="rdm-header-left">
 					<div class="rdm-avatar">{initials}</div>
 					<div class="rdm-header-info">
 						<h6 class="rdm-customer-name">
-							{(reservation.customer.name || reservation.customer_name) ?? '—'}
+							{(reservation.customer?.name || reservation.customer_name) ?? '—'}
 						</h6>
 						<div class="rdm-contact-row">
 							{#if fullPhone}
 								<a
 									class="rdm-contact-link"
-									href="tel:{reservation.customer.phone || reservation.customer_phone}"
+									href="tel:{reservation?.customer?.phone || reservation?.customer_phone}"
 								>
 									<i class="bx bx-phone"></i>
 									{fullPhone}
@@ -122,10 +145,10 @@
 							{#if reservation.customer_mail}
 								<a
 									class="rdm-contact-link"
-									href="mailto:{reservation.customer.mail || reservation.customer_mail}"
+									href="mailto:{reservation.customer?.mail || reservation.customer_mail}"
 								>
 									<i class="bx bx-envelope"></i>
-									{reservation.customer.mail || reservation.customer_mail}
+									{reservation.customer?.mail || reservation.customer_mail}
 								</a>
 							{/if}
 						</div>
@@ -136,9 +159,9 @@
 						<i class="bx {statusInfo.icon}"></i>
 						{statusInfo.label}
 					</span>
-					<!-- svelte-ignore a11y-click-events-have-key-events -->
-					<!-- svelte-ignore a11y-no-static-element-interactions -->
-					<span class="rdm-close" on:click={close}><i class="bx bx-x"></i></span>
+					<!-- svelte-ignore a11y_click_events_have_key_events -->
+					<!-- svelte-ignore a11y_no_static_element_interactions -->
+					<span class="rdm-close" onclick={close}><i class="bx bx-x"></i></span>
 				</div>
 			</div>
 
@@ -171,121 +194,154 @@
 				{/if}
 			</div>
 
-			<!-- ── Detaylar ────────────────────────────────────────────── -->
-			<div class="rdm-body">
-				<div class="rdm-section">
-					{#if reservation.service_name}
-						<div class="rdm-detail-row">
-							<span class="rdm-detail-icon"><i class="bx bx-spa"></i></span>
-							<div>
-								<div class="rdm-detail-label">Hizmet</div>
-								<div class="rdm-detail-value">
-									{reservation.service_name}
+			<!-- ── Split Layout ─────────────────────────────────────────── -->
+			<div class="rdm-layout">
+				<!-- ── Sol: Detaylar ────────────────────────────────────────── -->
+				<div class="rdm-left">
+					<div class="rdm-body">
+						<div class="rdm-section">
+							{#if reservation.service_name}
+								<div class="rdm-detail-row">
+									<span class="rdm-detail-icon"><i class="bx bx-spa"></i></span>
+									<div>
+										<div class="rdm-detail-label">Hizmet</div>
+										<div class="rdm-detail-value">
+											{reservation.service_name}
+										</div>
+									</div>
 								</div>
-							</div>
-						</div>
-					{/if}
-					{#if reservation.resource}
-						<div class="rdm-detail-row">
-							<span class="rdm-detail-icon"><i class="bx bx-user"></i></span>
-							<div>
-								<div class="rdm-detail-label">
-									{reservation.resource.type == 1 ? 'Personel' : ''}
+							{/if}
+							{#if reservation.resource}
+								<div class="rdm-detail-row">
+									<span class="rdm-detail-icon"><i class="bx bx-user"></i></span>
+									<div>
+										<div class="rdm-detail-label">
+											{reservation.resource.type == 1 ? 'Personel' : ''}
+										</div>
+										<div class="rdm-detail-value">
+											{reservation.resource.name}
+										</div>
+									</div>
 								</div>
-								<div class="rdm-detail-value">
-									{reservation.resource.name}
+							{/if}
+
+							{#if reservation.department_name}
+								<div class="rdm-detail-row">
+									<span class="rdm-detail-icon"><i class="bx bx-buildings"></i></span>
+									<div>
+										<div class="rdm-detail-label">Departman</div>
+										<div class="rdm-detail-value">{reservation.department_name}</div>
+									</div>
 								</div>
-							</div>
-						</div>
-					{/if}
+							{/if}
 
-					{#if reservation.department_name}
-						<div class="rdm-detail-row">
-							<span class="rdm-detail-icon"><i class="bx bx-buildings"></i></span>
-							<div>
-								<div class="rdm-detail-label">Departman</div>
-								<div class="rdm-detail-value">{reservation.department_name}</div>
-							</div>
-						</div>
-					{/if}
-
-					{#if reservation.resource_name}
-						<div class="rdm-detail-row">
-							<span class="rdm-detail-icon"><i class="bx bx-user-check"></i></span>
-							<div>
-								<div class="rdm-detail-label">Personel / Kaynak</div>
-								<div class="rdm-detail-value">{reservation.resource_name}</div>
-							</div>
-						</div>
-					{/if}
-
-					{#if createdLabel}
-						<div class="rdm-detail-row">
-							<span class="rdm-detail-icon"><i class="bx bx-calendar-plus"></i></span>
-							<div>
-								<div class="rdm-detail-label">Kayıt Tarihi</div>
-								<div class="rdm-detail-value">{createdLabel}</div>
-							</div>
-						</div>
-					{/if}
-
-					{#if reservation.timezone}
-						<div class="rdm-detail-row">
-							<span class="rdm-detail-icon"><i class="bx bx-world"></i></span>
-							<div>
-								<div class="rdm-detail-label">Zaman Dilimi</div>
-								<div class="rdm-detail-value">{reservation.timezone}</div>
-							</div>
-						</div>
-					{/if}
-				</div>
-
-				<!-- Planlı Rezervasyon Bandı (opsiyonel) -->
-				{#if reservation.plan_name}
-					<div class="rdm-plan-box">
-						<div class="rdm-plan-icon"><i class="bx bx-revision"></i></div>
-						<div class="rdm-plan-info">
-							<div class="rdm-plan-label">Planlı Paket</div>
-							<div class="rdm-plan-name">{reservation.plan_name}</div>
-						</div>
-						{#if reservation.occurrence_index && reservation.total_occurrences}
-							<div class="rdm-plan-progress">
-								<span class="rdm-plan-count">
-									{reservation.occurrence_index} / {reservation.total_occurrences}
-								</span>
-								<div class="rdm-plan-bar">
-									<div
-										class="rdm-plan-bar-fill"
-										style="width: {(reservation.occurrence_index / reservation.total_occurrences) *
-											100}%"
-									></div>
+							{#if reservation.resource_name}
+								<div class="rdm-detail-row">
+									<span class="rdm-detail-icon"><i class="bx bx-user-check"></i></span>
+									<div>
+										<div class="rdm-detail-label">Personel / Kaynak</div>
+										<div class="rdm-detail-value">{reservation.resource_name}</div>
+									</div>
 								</div>
+							{/if}
+
+							{#if createdLabel}
+								<div class="rdm-detail-row">
+									<span class="rdm-detail-icon"><i class="bx bx-calendar-plus"></i></span>
+									<div>
+										<div class="rdm-detail-label">Kayıt Tarihi</div>
+										<div class="rdm-detail-value">{createdLabel}</div>
+									</div>
+								</div>
+							{/if}
+
+							{#if reservation.timezone}
+								<div class="rdm-detail-row">
+									<span class="rdm-detail-icon"><i class="bx bx-world"></i></span>
+									<div>
+										<div class="rdm-detail-label">Zaman Dilimi</div>
+										<div class="rdm-detail-value">{reservation.timezone}</div>
+									</div>
+								</div>
+							{/if}
+						</div>
+
+						<!-- Planlı Rezervasyon Bandı (opsiyonel) -->
+						{#if reservation.plan_name}
+							<div class="rdm-plan-box">
+								<div class="rdm-plan-icon"><i class="bx bx-revision"></i></div>
+								<div class="rdm-plan-info">
+									<div class="rdm-plan-label">Planlı Paket</div>
+									<div class="rdm-plan-name">{reservation.plan_name}</div>
+								</div>
+								{#if reservation.occurrence_index && reservation.total_occurrences}
+									<div class="rdm-plan-progress">
+										<span class="rdm-plan-count">
+											{reservation.occurrence_index} / {reservation.total_occurrences}
+										</span>
+										<div class="rdm-plan-bar">
+											<div
+												class="rdm-plan-bar-fill"
+												style="width: {(reservation.occurrence_index /
+													reservation.total_occurrences) *
+													100}%"
+											></div>
+										</div>
+									</div>
+								{/if}
+							</div>
+						{/if}
+
+						<!-- Notlar / Açıklama -->
+						{#if reservation.description}
+							<div class="rdm-notes">
+								<i class="bx bx-note rdm-notes-icon"></i>
+								<span>{reservation.description}</span>
 							</div>
 						{/if}
 					</div>
-				{/if}
 
-				<!-- Notlar / Açıklama -->
-				{#if reservation.description}
-					<div class="rdm-notes">
-						<i class="bx bx-note rdm-notes-icon"></i>
-						<span>{reservation.description}</span>
+					<div class="rdm-footer">
+						<button
+							class="rdm-btn-cancel"
+							onclick={handleCancel}
+							disabled={reservation.status == 3 || reservation.status == 2}
+						>
+							<i class="bx bx-x-circle"></i> İptal Et
+						</button>
+						<div class="rdm-footer-right">
+							<button class="rdm-btn-secondary" onclick={close}>Kapat</button>
+							<button class="rdm-btn-primary" onclick={handleEdit}>
+								<i class="bx bx-edit-alt"></i> Düzenle
+							</button>
+						</div>
 					</div>
-				{/if}
-			</div>
-
-			<!-- ── Footer ─────────────────────────────────────────────── -->
-			<div class="rdm-footer">
-				<button class="rdm-btn-cancel" on:click={handleCancel} disabled={reservation.status === 3}>
-					<i class="bx bx-x-circle"></i>
-					İptal Et
-				</button>
-				<div class="rdm-footer-right">
-					<button class="rdm-btn-secondary" on:click={close}>Kapat</button>
-					<button class="rdm-btn-primary" on:click={handleEdit}>
-						<i class="bx bx-edit-alt"></i>
-						Düzenle
-					</button>
+				</div>
+				<div class="rdm-right">
+					<div class="rdm-payment-header">
+						<span class="rdm-payment-title"><i class="bx bx-wallet-alt"></i> Ödemeler</span>
+						{#if !showPaymentForm}
+							<button class="rdm-pay-add-btn" onclick={() => (showPaymentForm = true)}
+								><i class="bx bx-plus"></i> Ekle</button
+							>
+						{:else}
+							<button class="rdm-pay-back-btn" onclick={() => (showPaymentForm = false)}
+								><i class="bx bx-arrow-back"></i> Listeye Dön</button
+							>
+						{/if}
+					</div>
+					<div class="rdm-payment-body">
+						{#if showPaymentForm}
+							<PaymentForm
+								bookingId={reservation.id}
+								customerId={reservation.customer?.id || reservation.customer_id || ''}
+								compact
+								onSuccess={handlePaymentSuccess}
+							/>
+						{:else}
+							<PaymentList bind:this={paymentListRef} bookingId={reservation.id} compact />
+						{/if}
+					</div>
 				</div>
 			</div>
 		</div>
@@ -327,6 +383,109 @@
 			0 4px 16px rgba(0, 0, 0, 0.08);
 		overflow: hidden;
 		animation: rdm-slide-up 0.22s cubic-bezier(0.34, 1.36, 0.64, 1);
+	}
+	.rdm-modal--wide {
+		max-width: 940px;
+	}
+
+	/* ── Split layout ─────────────────────────────────────────────── */
+	.rdm-layout {
+		display: flex;
+		align-items: stretch;
+		min-height: 0;
+	}
+	.rdm-left {
+		flex: 1;
+		display: flex;
+		flex-direction: column;
+		min-width: 0;
+		border-right: 1px solid #f1f3f5;
+	}
+	.rdm-left .rdm-body {
+		flex: 1;
+		overflow-y: auto;
+	}
+	.rdm-right {
+		width: 380px;
+		flex-shrink: 0;
+		display: flex;
+		flex-direction: column;
+		max-height: 70vh;
+	}
+	.rdm-payment-header {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		padding: 14px 16px;
+		border-bottom: 1px solid #f1f3f5;
+		flex-shrink: 0;
+	}
+	.rdm-payment-title {
+		font-size: 13.5px;
+		font-weight: 700;
+		color: #1a202c;
+		display: flex;
+		align-items: center;
+		gap: 6px;
+	}
+	.rdm-payment-title i {
+		color: #f5365c;
+		font-size: 17px;
+	}
+	.rdm-pay-add-btn {
+		display: inline-flex;
+		align-items: center;
+		gap: 5px;
+		padding: 5px 12px;
+		border: none;
+		border-radius: 7px;
+		background: #f46481;
+		color: white;
+		font-size: 12.5px;
+		font-weight: 600;
+		cursor: pointer;
+		transition: all 150ms;
+		font-family: inherit;
+	}
+	.rdm-pay-add-btn:hover {
+		background: #e85577;
+	}
+	.rdm-pay-back-btn {
+		display: inline-flex;
+		align-items: center;
+		gap: 5px;
+		padding: 5px 12px;
+		border: 1.5px solid #ebedf0;
+		border-radius: 7px;
+		background: white;
+		color: #6b7a99;
+		font-size: 12.5px;
+		font-weight: 600;
+		cursor: pointer;
+		transition: all 150ms;
+		font-family: inherit;
+	}
+	.rdm-pay-back-btn:hover {
+		background: #f7f8fa;
+	}
+	.rdm-payment-body {
+		flex: 1;
+		overflow-y: auto;
+		padding: 14px;
+	}
+
+	@media (max-width: 780px) {
+		.rdm-layout {
+			flex-direction: column;
+		}
+		.rdm-left {
+			border-right: none;
+			border-bottom: 1px solid #f1f3f5;
+		}
+		.rdm-right {
+			width: 100%;
+			max-height: none;
+		}
 	}
 
 	@keyframes rdm-slide-up {

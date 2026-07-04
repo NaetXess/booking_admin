@@ -1,13 +1,13 @@
 <script>
 	import { onMount } from 'svelte';
 	import { Booking } from '@controllers/booking';
-	import { page } from '$app/stores';
+	import { page } from '$app/state';
 	import { formatDate } from '@utils/function';
 
-	let booking = null;
-	let loading = true;
-	let notFound = false;
-	let copied = false;
+	let booking = $state(null);
+	let loading = $state(true);
+	let notFound = $state(false);
+	let copied = $state(false);
 
 	const statusConfig = {
 		0: { label: 'Pasif', color: '#ef4444', bg: '#fef2f2', dot: '#ef4444' },
@@ -16,10 +16,10 @@
 		3: { label: 'Tamamlandı', color: '#7c3aed', bg: '#f5f3ff', dot: '#8b5cf6' }
 	};
 
-	let status = statusConfig[1];
+	let status = $state(statusConfig[1]);
 
 	onMount(async () => {
-		const id = $page.params.id;
+		const id = page.params.id;
 		const data = await Booking.getSummary(id);
 		if (data) {
 			booking = data;
@@ -43,8 +43,8 @@
 </script>
 
 <svelte:head>
-	<title>{booking ? `${booking.customer_name} · Rezervasyon` : 'Rezervasyon Detayı'}</title>
-	<meta name="description" content="Rezervasyon detay sayfası" />
+	<title>{booking ? `${booking.customer_name} · Randevu` : 'Randevu Detayı'}</title>
+	<meta name="description" content="Randevu detay sayfası" />
 	<link rel="preconnect" href="https://fonts.googleapis.com" />
 	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="true" />
 	<link
@@ -74,7 +74,7 @@
 					<line x1="9" y1="15" x2="15" y2="15" />
 				</svg>
 			</div>
-			<span class="brand-text">Rezervasyon Sistemi</span>
+			<span class="brand-text">Randevu Sistemi</span>
 		</div>
 
 		{#if loading}
@@ -106,8 +106,8 @@
 						<circle cx="12" cy="16" r="0.5" fill="#ff7a30" />
 					</svg>
 				</div>
-				<h2 class="nf-title">Rezervasyon Bulunamadı</h2>
-				<p class="nf-desc">Bu bağlantı geçersiz veya rezervasyon kaldırılmış olabilir.</p>
+				<h2 class="nf-title">Randevu Bulunamadı</h2>
+				<p class="nf-desc">Bu bağlantı geçersiz veya randevu kaldırılmış olabilir.</p>
 			</div>
 		{:else}
 			<div class="receipt" class:slide-in={!loading}>
@@ -133,7 +133,7 @@
 							</svg>
 						</div>
 						<div>
-							<p class="head-label">REZERVASYON</p>
+							<p class="head-label">RANDEVU</p>
 							<p class="head-id">#{booking.id?.slice(0, 6).toUpperCase()}</p>
 						</div>
 					</div>
@@ -224,7 +224,7 @@
 				<!-- Footer actions -->
 				<div class="receipt-footer">
 					<p class="footer-hint">Bu sayfanın linkini paylaşabilirsiniz</p>
-					<button class="copy-btn" class:copied on:click={copyLink}>
+					<button class="copy-btn" class:copied onclick={copyLink}>
 						{#if copied}
 							<svg
 								width="15"
@@ -256,7 +256,7 @@
 			</div>
 		{/if}
 
-		<p class="page-footer">© {new Date().getFullYear()} Rezervasyon Yönetim Sistemi</p>
+		<p class="page-footer">© {new Date().getFullYear()} Randevu Yönetim Sistemi</p>
 	</div>
 </div>
 

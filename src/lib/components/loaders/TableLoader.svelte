@@ -1,3 +1,4 @@
+<!-- @migration-task Error while migrating Svelte code: `<div>` is invalid inside `<tr>` -->
 <script>
 	import { onMount } from 'svelte';
 
@@ -31,10 +32,13 @@
 
 {#each rows as row}
 	<tr>
-		{#each cols as column}
-			<td></td>
+		{#each cols as column, i}
+			<td>
+				{#if i === 0}
+					<div class="loader"></div>
+				{/if}
+			</td>
 		{/each}
-		<div class="loader"></div>
 	</tr>
 {/each}
 

@@ -12,12 +12,12 @@
 	import Modal from '@components/Modal.svelte';
 	import Confirmation from '@components/helpers/Confirmation.svelte';
 
-	let services = [];
-	let loading = false;
+	let services = $state([]);
+	let loading = $state(false);
 
 	// DELETE
-	let showModal = false;
-	let selectedService;
+	let showModal = $state(false);
+	let selectedService = $state();
 
 	async function handleDeleteService() {
 		let res = await Service.delete(selectedService.id);
@@ -92,7 +92,7 @@
 					{#each services as service}
 						<tr>
 							<td><div class="bold">{service.name}</div></td>
-							<td><div class="">{formatDate(service.createdat, 10)}</div></td>
+							<td><div class="">{formatDate(service.createdat, 9)}</div></td>
 
 							<td
 								><div class="">
@@ -105,19 +105,19 @@
 							>
 							<td>
 								<div class="row-actions">
-									<!-- svelte-ignore a11y-click-events-have-key-events -->
-									<!-- svelte-ignore a11y-no-static-element-interactions -->
+									<!-- svelte-ignore a11y_click_events_have_key_events -->
+									<!-- svelte-ignore a11y_no_static_element_interactions -->
 									<span
 										class="action-btn edit"
-										on:click={() => goto(`services/update/${service.id}`)}
+										onclick={() => goto(`services/update/${service.id}`)}
 									>
 										<i class="bx bx-edit-alt"></i>
 									</span>
-									<!-- svelte-ignore a11y-click-events-have-key-events -->
-									<!-- svelte-ignore a11y-no-static-element-interactions -->
+									<!-- svelte-ignore a11y_click_events_have_key_events -->
+									<!-- svelte-ignore a11y_no_static_element_interactions -->
 									<span
 										class="action-btn delete"
-										on:click={() => {
+										onclick={() => {
 											showModal = true;
 											selectedService = service;
 										}}

@@ -2,41 +2,44 @@
 	import { createEventDispatcher, onMount } from 'svelte';
 
 	// ── Props ──────────────────────────────────────────────────────────────────
-	/** @type {{ id: any; name: string; icon?: string }[]} */
-	export let options = [];
+	
 
-	/** Seçili değerlerin dizisi (bind:selected ile reaktif bağlantı) */
-	export let selected = [];
+	
 
-	/** Alan etiketi */
-	export let label = '';
+	
 
-	/** Placeholder text */
-	export let placeholder = 'Seçiniz…';
+	
 
-	/** Maksimum seçim sayısı (undefined = sınırsız) */
-	export let max = undefined;
+	
 
-	/** Devre dışı bırak */
-	export let disabled = false;
+	
 
-	/** Search bar göster */
-	export let searchable = true;
+	
+	/** @type {{options?: { id: any; name: string; icon?: string }[], selected?: any, label?: string, placeholder?: string, max?: any, disabled?: boolean, searchable?: boolean}} */
+	let {
+		options = [],
+		selected = $bindable([]),
+		label = '',
+		placeholder = 'Seçiniz…',
+		max = undefined,
+		disabled = false,
+		searchable = true
+	} = $props();
 
 	// ── Internal ───────────────────────────────────────────────────────────────
 	const dispatch = createEventDispatcher();
 
-	let open = false;
-	let searchQuery = '';
-	let wrapperEl;
-	let inputEl;
+	let open = $state(false);
+	let searchQuery = $state('');
+	let wrapperEl = $state();
+	let inputEl = $state();
 
-	$: filtered = searchQuery.trim()
+	let filtered = $derived(searchQuery.trim()
 		? options.filter((o) => o.name.toLowerCase().includes(searchQuery.toLowerCase()))
-		: options;
+		: options);
 
-	$: isSelected = (id) => selected.some((s) => s === id);
-	$: reachedMax = max !== undefined && selected.length >= max;
+	let isSelected = $derived((id) => selected.some((s) => s === id));
+	let reachedMax = $derived(max !== undefined && selected.length >= max);
 
 	function toggle(option) {
 		if (disabled) return;
@@ -96,9 +99,9 @@
 	{/if}
 
 	<!-- Trigger -->
-	<!-- svelte-ignore a11y-click-events-have-key-events -->
-	<!-- svelte-ignore a11y-no-static-element-interactions -->
-	<div class="ms-control" class:open class:has-value={selected.length > 0} on:click={openDropdown}>
+	<!-- svelte-ignore a11y_click_events_have_key_events -->
+	<!-- svelte-ignore a11y_no_static_element_interactions -->
+	<div class="ms-control" class:open class:has-value={selected.length > 0} onclick={openDropdown}>
 		<div class="ms-tags">
 			{#if selected.length === 0}
 				<span class="ms-placeholder">{placeholder}</span>
@@ -107,9 +110,9 @@
 					<span class="ms-tag">
 						{#if iconOf(id)}<i class="bx {iconOf(id)}"></i>{/if}
 						{nameOf(id)}
-						<!-- svelte-ignore a11y-click-events-have-key-events -->
-						<!-- svelte-ignore a11y-no-static-element-interactions -->
-						<span class="ms-tag-remove" on:click={(e) => remove(id, e)}>
+						<!-- svelte-ignore a11y_click_events_have_key_events -->
+						<!-- svelte-ignore a11y_no_static_element_interactions -->
+						<span class="ms-tag-remove" onclick={(e) => remove(id, e)}>
 							<i class="bx bx-x"></i>
 						</span>
 					</span>
@@ -119,9 +122,9 @@
 
 		<div class="ms-actions">
 			{#if selected.length > 0}
-				<!-- svelte-ignore a11y-click-events-have-key-events -->
-				<!-- svelte-ignore a11y-no-static-element-interactions -->
-				<span class="ms-clear" title="Temizle" on:click={clear}>
+				<!-- svelte-ignore a11y_click_events_have_key_events -->
+				<!-- svelte-ignore a11y_no_static_element_interactions -->
+				<span class="ms-clear" title="Temizle" onclick={clear}>
 					<i class="bx bx-x-circle"></i>
 				</span>
 			{/if}
@@ -158,13 +161,13 @@
 					</li>
 				{:else}
 					{#each filtered as option (option.id)}
-						<!-- svelte-ignore a11y-click-events-have-key-events -->
-						<!-- svelte-ignore a11y-no-static-element-interactions -->
+						<!-- svelte-ignore a11y_click_events_have_key_events -->
+						<!-- svelte-ignore a11y_no_static_element_interactions -->
 						<li
 							class="ms-option"
 							class:selected={isSelected(option.id)}
 							class:disabled={!isSelected(option.id) && reachedMax}
-							on:click={() => toggle(option)}
+							onclick={() => toggle(option)}
 						>
 							<span class="ms-option-check">
 								{#if isSelected(option.id)}

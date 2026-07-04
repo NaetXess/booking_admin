@@ -1,34 +1,41 @@
 <script>
+	import { run, preventDefault, stopPropagation } from 'svelte/legacy';
+
 	import { formatPhoneDisplay } from '@utils/function';
 	import { onMount } from 'svelte';
 	import countries from '@constants/country_codes.json';
 
 	// Dışarıdan veya DB'den gelecek değişkenleriniz
-	export let phoneValue = '';
-	export let countryCode = '+90';
-	export let format = 'input';
 
-	export let id;
-	export let disabled;
-	export let autoFilled;
+	/** @type {{phoneValue?: string, countryCode?: string, format?: string, id: any, disabled: any, autoFilled: any}} */
+	let {
+		phoneValue = $bindable(''),
+		countryCode = $bindable('+90'),
+		format = 'input',
+		id,
+		disabled,
+		autoFilled
+	} = $props();
 
 	// Component içi state'ler
-	let displayValue = '';
-	let isOpen = false;
-	let searchQuery = '';
-	let dropdownContainer; // Dışarı tıklamayı yakalamak için wrapper referansı
-	let searchInputRef; // Dropdown açılınca otomatik focuslanmak için
+	let displayValue = $state('');
+	let isOpen = $state(false);
+	let searchQuery = $state('');
+	let dropdownContainer = $state(); // Dışarı tıklamayı yakalamak için wrapper referansı
+	let searchInputRef = $state(); // Dropdown açılınca otomatik focuslanmak için
 
 	// İsime veya ülke koduna göre filtreleme (Büyük/Küçük harf duyarsız)
-	$: filteredCountries = countries.filter(
+	let filteredCountries = $derived(countries.filter(
 		(c) =>
 			c.name.toLowerCase().includes(searchQuery.toLowerCase()) || c.dial_code.includes(searchQuery)
-	);
+	));
 
 	// Dışarıdan telefon geldikçe formatla
-	$: if (phoneValue !== undefined && phoneValue !== null) {
-		displayValue = formatPhoneDisplay(countryCode, phoneValue, format);
-	}
+	run(() => {
+		if (phoneValue !== undefined && phoneValue !== null) {
+			displayValue = formatPhoneDisplay(countryCode, phoneValue, format);
+		}
+	});
 
 	// Modal dışına tıklanıldığında kapatma event listener'ı
 	onMount(() => {
@@ -87,7 +94,7 @@
 			type="button"
 			class="country-selector"
 			{disabled}
-			on:click|preventDefault|stopPropagation={toggleDropdown}
+			onclick={stopPropagation(preventDefault(toggleDropdown))}
 		>
 			<span class="code-text">{countryCode}</span>
 			<svg
@@ -116,7 +123,7 @@
 			type="text"
 			placeholder="5XX XXX XX XX"
 			value={displayValue}
-			on:input={handleInput}
+			oninput={handleInput}
 		/>
 	</div>
 
@@ -134,12 +141,12 @@
 
 			<ul class="country-list">
 				{#each filteredCountries as item}
-					<!-- svelte-ignore a11y-click-events-have-key-events // (Svelte uyarılarını susturmak için opsiyonel) -->
-					<!-- svelte-ignore a11y-no-noninteractive-element-interactions -->
+					<!-- svelte-ignore a11y_click_events_have_key_events // (Svelte uyarılarını susturmak için opsiyonel) -->
+					<!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
 					<li
 						class="country-item"
 						class:active={item.dial_code === countryCode}
-						on:click={() => selectCountry(item.dial_code)}
+						onclick={() => selectCountry(item.dial_code)}
 					>
 						<span class="country-name">{item.name}</span>
 						<span class="country-dial">{item.dial_code}</span>

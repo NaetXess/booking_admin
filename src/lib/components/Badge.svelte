@@ -1,14 +1,21 @@
 <script>
+	import { createBubbler } from 'svelte/legacy';
+
+	const bubble = createBubbler();
 	import { onMount } from 'svelte';
 
-	export let primary;
-	export let danger;
 
-	export let dropdown;
-	export let dropdownCloseCondition = 'outside';
 
-	export let theme;
-	let elementAttributes = {};
+	/** @type {{primary: any, danger: any, dropdown: any, dropdownCloseCondition?: string, theme: any, children?: import('svelte').Snippet}} */
+	let {
+		primary,
+		danger,
+		dropdown,
+		dropdownCloseCondition = 'outside',
+		theme = $bindable(),
+		children
+	} = $props();
+	let elementAttributes = $state({});
 
 	onMount(() => {
 		if (primary) {
@@ -24,8 +31,8 @@
 	});
 </script>
 
-<!-- svelte-ignore a11y-no-static-element-interactions -->
-<span class="t-badge {theme}" {...elementAttributes} on:click><slot /></span>
+<!-- svelte-ignore a11y_no_static_element_interactions -->
+<span class="t-badge {theme}" {...elementAttributes} onclick={bubble('click')}>{@render children?.()}</span>
 
 <style>
 	.t-badge {

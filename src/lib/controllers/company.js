@@ -1,4 +1,4 @@
-import { Get, Put } from '@utils/function';
+import { Get, Put, toastCustom } from '@utils/function';
 
 const route = 'api/companies';
 
@@ -15,6 +15,7 @@ export class Company {
 	static update = async (body, delay) => {
 		try {
 			let response = await Put(`${route}`, body, true, false, delay);
+			toastCustom('Firma bilgileri kaydedildi.', 1);
 			return response.data;
 		} catch (error) {
 			return false;

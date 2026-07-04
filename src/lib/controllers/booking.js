@@ -63,7 +63,7 @@ export class Booking {
 	static createBooking = async (body, delay) => {
 		try {
 			let response = await Post(`${route}`, body, true, false, delay);
-			toastCustom('Rezervasyon başarıyla oluşturuldu', 1);
+			toastCustom('Randevu başarıyla oluşturuldu', 1);
 			return response;
 		} catch (error) {
 			return false;
@@ -73,7 +73,7 @@ export class Booking {
 	static createBookingFromOccurrence = async (body, delay) => {
 		try {
 			let response = await Post(`${route}/occurrence`, body, true, false, delay);
-			toastCustom('Rezervasyon başarıyla oluşturuldu', 1);
+			toastCustom('Randevu başarıyla oluşturuldu', 1);
 			return response;
 		} catch (error) {
 			return false;
@@ -83,7 +83,17 @@ export class Booking {
 	static updateBooking = async (body, delay) => {
 		try {
 			let response = await Put(`${route}`, body, true, false, delay);
-			toastCustom('Rezervasyon başarıyla güncellendi', 1);
+			toastCustom('Randevu başarıyla güncellendi', 1);
+			return response;
+		} catch (error) {
+			return false;
+		}
+	};
+
+	static updateBookingStatus = async ({ id, status }, delay) => {
+		try {
+			let response = await Put(`${route}/status/${id}?status=${status}`, null, true, false, delay);
+			toastCustom('Randevu durumu başarıyla güncellendi', 1);
 			return response;
 		} catch (error) {
 			return false;
@@ -93,7 +103,7 @@ export class Booking {
 	static delete = async (id, delay) => {
 		try {
 			let response = await Delete(`${route}/${id}`, true, delay);
-			toastCustom('Rezervasyon başarıyla silindi!', 1);
+			toastCustom('Randevu başarıyla silindi!', 1);
 			return response;
 		} catch (error) {
 			return false;

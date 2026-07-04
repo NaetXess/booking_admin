@@ -2,15 +2,14 @@
 	import { goto } from '$app/navigation';
 	import { User } from '@controllers/user';
 
-	let userName;
-	let password;
-	let rememberMe = true;
+	let userName = $state();
+	let password = $state();
+	let rememberMe = $state(true);
 
-	let disableBtn = false;
+	let disableBtn = $state(false);
 
 	async function login() {
 		let res = await User.login({ username: userName, password, remember: rememberMe });
-		console.log(res);
 
 		if (res) {
 			localStorage.setItem('user', JSON.stringify(res.data[0]));
@@ -54,10 +53,10 @@
 
 			<div class="promo-area">
 				<div class="promo-badge">🎉 Yenilik</div>
-				<h3 class="promo-title">Tüm rezervasyonlarınız tek panelde!</h3>
+				<h3 class="promo-title">Tüm randevularınız tek panelde!</h3>
 				<p class="promo-desc">
-					Günlük rezervasyon takibi, personel yönetimi ve detaylı raporlarla işletmenizi daha
-					verimli yönetin.
+					Günlük randevu takibi, personel yönetimi ve detaylı raporlarla işletmenizi daha verimli
+					yönetin.
 				</p>
 
 				<div class="feature-list">
@@ -65,7 +64,7 @@
 						<div class="feature-icon">
 							<i class="bx bx-check-circle"></i>
 						</div>
-						<span>Anlık rezervasyon takibi</span>
+						<span>Anlık randevu takibi</span>
 					</div>
 					<div class="feature-item">
 						<div class="feature-icon">
@@ -96,7 +95,7 @@
 				<div class="stat-divider"></div>
 				<div class="stat-item">
 					<span class="stat-num">80+</span>
-					<span class="stat-label">Günlük Rezervasyon</span>
+					<span class="stat-label">Günlük Randevu</span>
 				</div>
 				<div class="stat-divider"></div>
 				<div class="stat-item">
@@ -138,7 +137,7 @@
 						<a href="" class="forgot-link">Şifremi Unuttum</a>
 					</div>
 
-					<button class="sign-in-btn" disabled={disableBtn} on:click={handleLogin}>
+					<button class="sign-in-btn" disabled={disableBtn} onclick={handleLogin}>
 						<i class="bx bx-log-in"></i>
 						Giriş Yap
 					</button>

@@ -3,20 +3,23 @@
 	import { sourceLabel } from '@constants/constant';
 	import { formatDate } from '@utils/function';
 
-	export let customers = [];
+	/** @type {{customers?: any}} */
+	let { customers = [] } = $props();
 	// Beklenen obje: { id, name, phone, email, source, status, registrationDate }
 
-	let searchQuery = '';
-	let selectedCustomer = null;
+	let searchQuery = $state('');
+	let selectedCustomer = $state(null);
 	const dispatch = createEventDispatcher();
 
-	$: filteredCustomers = customers.filter((c) => {
-		if (!searchQuery) return true;
-		const query = searchQuery.toLowerCase();
-		const nameMatch = c.name?.toLowerCase().includes(query);
-		const phoneMatch = c.phone?.toLowerCase().includes(query);
-		return nameMatch || phoneMatch;
-	});
+	let filteredCustomers = $derived(
+		customers?.filter((c) => {
+			if (!searchQuery) return true;
+			const query = searchQuery.toLowerCase();
+			const nameMatch = c.name?.toLowerCase().includes(query);
+			const phoneMatch = c.phone?.toLowerCase().includes(query);
+			return nameMatch || phoneMatch;
+		})
+	);
 
 	function selectCustomer(customer) {
 		selectedCustomer = customer;
@@ -62,14 +65,14 @@
 				</tr>
 			</thead>
 			<tbody>
-				{#if filteredCustomers.length > 0}
+				{#if filteredCustomers && filteredCustomers.length > 0}
 					{#each filteredCustomers as customer (customer.id)}
-						<!-- svelte-ignore a11y-click-events-have-key-events -->
-						<!-- svelte-ignore a11y-no-noninteractive-element-interactions -->
+						<!-- svelte-ignore a11y_click_events_have_key_events -->
+						<!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
 						<tr
 							class:selected={selectedCustomer?.id === customer.id}
-							on:click={() => selectCustomer(customer)}
-							on:dblclick={() => handleDoubleClick(customer)}
+							onclick={() => selectCustomer(customer)}
+							ondblclick={() => handleDoubleClick(customer)}
 						>
 							<td>
 								<div class="customer-name">{customer.name}</div>
@@ -110,7 +113,7 @@
 				<span class="muted">Lütfen listeden bir müşteri seçin</span>
 			{/if}
 		</div>
-		<button class="btn-confirm" disabled={!selectedCustomer} on:click={confirmSelection}>
+		<button class="btn-confirm" disabled={!selectedCustomer} onclick={confirmSelection}>
 			Tamam
 		</button>
 	</div>

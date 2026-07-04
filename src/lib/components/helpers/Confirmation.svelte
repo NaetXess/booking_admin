@@ -10,9 +10,8 @@
 		dispatch('confirm');
 	}
 
-	export let text = '';
-	export let boldWord = '';
-	export let type = 1;
+	/** @type {{text?: string, boldWord?: string, type?: number}} */
+	let { text = '', boldWord = '', type = 1 } = $props();
 </script>
 
 <div class="content">
@@ -34,8 +33,8 @@
 	</p>
 
 	<div class="actions">
-		<button class="confirm" on:click={onConfirm}> Evet, Sil </button>
-		<button class="cancel" on:click={onCancel}> Hayır </button>
+		<button class="confirm" onclick={onConfirm}> Evet, Sil </button>
+		<button class="cancel" onclick={onCancel}> Hayır </button>
 	</div>
 </div>
 

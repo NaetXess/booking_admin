@@ -1,6 +1,6 @@
 <script>
-	export let selected = []; // Seçilen günlerin index array'i
-	export let label = 'Hangi Günler Tekrar Etsin?';
+	/** @type {{selected?: any, label?: string}} */
+	let { selected = $bindable([]), label = 'Hangi Günler Tekrar Etsin?' } = $props();
 
 	const days = [
 		{ id: 1, name: 'Pazartesi', short: 'Pzt' },
@@ -30,7 +30,7 @@
 			<button
 				type="button"
 				class="day-btn {selected.includes(day.id) ? 'active' : ''}"
-				on:click={() => toggleDay(day.id)}
+				onclick={() => toggleDay(day.id)}
 			>
 				<span class="day-short">{day.short}</span>
 				<span class="day-full">{day.name}</span>

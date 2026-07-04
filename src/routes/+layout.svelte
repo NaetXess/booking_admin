@@ -5,13 +5,15 @@
 	import '@styles/css/global.css';
 	import '@styles/scss/themes/light.scss';
 	import '@styles/css/bxicons/css/boxicons.min.css';
+	/** @type {{children?: import('svelte').Snippet}} */
+	let { children } = $props();
 
 	onMount(async () => {
 		const bootstrap = await import('bootstrap');
 	});
 </script>
 
-<slot />
+{@render children?.()}
 
 <style>
 </style>

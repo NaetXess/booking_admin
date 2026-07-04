@@ -1,9 +1,11 @@
 <script>
+	/** @type {{children?: import('svelte').Snippet}} */
+	let { children } = $props();
 </script>
 
 <div class="auth-wrapper">
 	<div class="content">
-		<slot />
+		{@render children?.()}
 	</div>
 </div>
 

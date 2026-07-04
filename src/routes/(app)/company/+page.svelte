@@ -7,28 +7,28 @@
 	import { goto } from '$app/navigation';
 
 	// ── Form state ────────────────────────────────────────────
-	let loading = false;
-	let saving = false;
-	let company = null;
+	let loading = $state(false);
+	let saving = $state(false);
+	let company = $state(null);
 
-	let form = {
+	let form = $state({
 		name: '',
 		email: '',
 		phone: '',
 		address: '',
 		description: ''
-	};
+	});
 
-	let stats = {
+	let stats = $state({
 		totalDepartments: 0,
 		totalServices: 0,
 		totalUsers: 0,
 		totalBookings: 0
-	};
+	});
 
 	// Track original values to show dirty state
-	let original = { ...form };
-	$: isDirty = JSON.stringify(form) !== JSON.stringify(original);
+	let original = $state({ ...form });
+	let isDirty = $derived(JSON.stringify(form) !== JSON.stringify(original));
 
 	async function getStats() {
 		let res = await CompanyStats.getTotalStats();
@@ -58,9 +58,6 @@
 
 		if (result !== false) {
 			original = { ...form };
-			toastCustom('Firma bilgileri kaydedildi.', 1);
-		} else {
-			toastCustom('Kayıt sırasında bir hata oluştu.', 2);
 		}
 	}
 
@@ -108,14 +105,14 @@
 	</div>
 
 	<div class="d-flex gap-3">
-		<button class="qa-btn qa-secondary" on:click={() => goto('/company/params')}>
+		<!-- <button class="qa-btn qa-secondary" onclick={() => goto('/company/params')}>
 			<i class="bx bx-cog"></i> Parametreler
-		</button>
+		</button> -->
 		<button
 			class="save-btn"
 			class:save-btn--active={isDirty}
 			disabled={!isDirty || saving}
-			on:click={handleSave}
+			onclick={handleSave}
 		>
 			{#if saving}
 				<i class="bx bx-loader-alt bx-spin"></i> Kaydediliyor…
@@ -289,7 +286,7 @@
 						<i class="bx bx-calendar-event"></i>
 					</div>
 					<div class="stat-value">{stats.totalBookings || '-'}</div>
-					<div class="stat-label">Rezervasyon</div>
+					<div class="stat-label">Randevu</div>
 				</div>
 			</div>
 		</div>

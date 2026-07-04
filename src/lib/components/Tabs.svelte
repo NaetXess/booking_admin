@@ -1,9 +1,9 @@
 <script>
 	// Sekme listesini dışarıdan alıyoruz: örn: [{ id: 'tab1', label: 'Genel' }]
-	export let items = [];
 
 	// Varsayılan olarak ilk sekmeyi aktif yap
-	export let activeTab = items.length > 0 ? items[0].id : null;
+	/** @type {{items?: any, activeTab?: any, children?: import('svelte').Snippet<[any]>}} */
+	let { items = [], activeTab = $bindable(items.length > 0 ? items[0].id : null), children } = $props();
 </script>
 
 <div class="tabs-container">
@@ -15,7 +15,7 @@
 				type="button"
 				class="tab-btn"
 				class:active={activeTab === item.id}
-				on:click={() => (activeTab = item.id)}
+				onclick={() => (activeTab = item.id)}
 			>
 				{item.label}
 			</button>
@@ -25,7 +25,7 @@
 	<!-- SEKMELERİN İÇERİK KISMI -->
 	<div class="tabs-content">
 		<!-- İçeriği buraya prop (slot) olarak dışarıdan basacağız -->
-		<slot {activeTab} />
+		{@render children?.({ activeTab, })}
 	</div>
 </div>
 

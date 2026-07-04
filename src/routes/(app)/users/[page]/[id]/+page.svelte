@@ -13,17 +13,17 @@
 	import Badge from '@components/Badge.svelte';
 	import { ROLES } from '@constants/roles';
 
-	let pageTitle;
-	let saving;
-	let isUpdate = false;
+	let pageTitle = $state();
+	let saving = $state();
+	let isUpdate = $state(false);
 
 	let id;
-	let name;
-	let mail;
-	let password;
-	let userName;
-	let role = 2;
-	let active = 1;
+	let name = $state();
+	let mail = $state();
+	let password = $state();
+	let userName = $state();
+	let role = $state(2);
+	let active = $state(1);
 
 	async function handleUserUpsert() {
 		let data = {
@@ -101,9 +101,21 @@
 			</Col>
 			<Col width="6">
 				<label for="user-username">Kullanıcı Adı</label>
-				<Input id="user-name" placeholder="marslan" icon="bx-user" bind:value={userName} />
+				<Input id="user-username" placeholder="marslan" icon="bx-user" bind:value={userName} />
 			</Col>
-			<Col width={`${!isUpdate} ? 6 : 12`}>
+			{#if !isUpdate}
+				<Col width="6">
+					<label for="user-password">Şifre</label>
+					<Input
+						id="user-password"
+						placeholder="******"
+						icon="bx-shield"
+						bind:value={password}
+						type="password"
+					/>
+				</Col>
+			{/if}
+			<Col width={isUpdate ? 12 : 6}>
 				<label for="user-mail">Mail</label>
 				<Input id="user-name" placeholder="example@gmail.com" icon="bx-user" bind:value={mail} />
 			</Col>
@@ -112,16 +124,20 @@
 			{/if}
 			<Col width="6">
 				<label for="user-role">Rol</label>
-				<div class="mt-2">
+				<Select icon="bx-pencil" bind:value={role}>
+					<option value={1} selected={role == 1}>Admin</option>
+					<option value={2} selected={role == 2}>Personel</option>
+				</Select>
+				<!-- <div class="mt-2">
 					<button
-						on:click={() => (role = ROLES.ADMIN)}
+						onclick={() => (role = ROLES.ADMIN)}
 						class="c-btn {role == ROLES.ADMIN ? 'purple' : ''}">Süper Admin</button
 					>
 					<button
-						on:click={() => (role = ROLES.PERSONEL)}
+						onclick={() => (role = ROLES.PERSONEL)}
 						class="c-btn {role == ROLES.PERSONEL ? 'orange' : ''}">Personel</button
 					>
-				</div>
+				</div> -->
 			</Col>
 			<Col width="6">
 				<label for="user-name">Aktif</label>
@@ -136,7 +152,7 @@
 					secondary
 					title="Vazgeç"
 					on:click={() => {
-						console.log('vazgeç');
+						goto('/users');
 					}}
 				/>
 				<Button primary title="Kaydet" disabled={saving} on:click={handleSave} />

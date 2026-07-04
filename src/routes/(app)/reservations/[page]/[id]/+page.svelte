@@ -1,4 +1,6 @@
 <script>
+	import { run } from 'svelte/legacy';
+
 	import { goto } from '$app/navigation';
 	import { page } from '$app/stores';
 	import { onMount } from 'svelte';
@@ -8,8 +10,9 @@
 	import { Customer } from '@controllers/customer';
 	import { Resource } from '@controllers/resource';
 	import { Service } from '@controllers/service';
-	import { Finance } from '@controllers/finance';
+	import { Finance, PaymentType } from '@controllers/finance';
 	import { getTimeZone, formatPhoneDisplay } from '@utils/function';
+	import PaymentForm from '@components/custom/finance/PaymentForm.svelte';
 	import { getRecurrenceText } from '@functions/reservation_plans';
 	import Row from '@components/Row.svelte';
 	import Col from '@components/Col.svelte';
@@ -19,17 +22,18 @@
 	import PhoneNumberInput from '@components/custom/PhoneNumberInput.svelte';
 	import Modal from '@components/Modal.svelte';
 	import CustomerSelector from '@components/custom/reservation/CustomerSelector.svelte';
+	import { RESERVATION_STATUS_DETAILS, RESERVATION_STATUS } from '@constants/booking_status_enum';
 
 	// ── Sayfa Ayarları ─────────────────────────────────────────────────────────
-	let pageMode = 0;
-	let pageTitle;
+	let pageMode = $state(0);
+	let pageTitle = $state();
 
 	// ── CustomerSelector ─────────────────────────────────────────────────────────
-	let showModal = false;
-	let selectedCustomerData = null;
-	let disableCustomerInputs = false;
+	let showModal = $state(false);
+	let selectedCustomerData = $state(null);
+	let disableCustomerInputs = $state(false);
 
-	let customersList = [];
+	let customersList = $state([]);
 
 	function handleCustomerData(e) {
 		selectedCustomerData = e.detail;
@@ -49,55 +53,55 @@
 	}
 
 	// ── api'den gelen ─────────────────────────────────────────────────────────
-	let services = [];
-	let departmentsData = [];
-	let resourceData = [];
-	let availableTimeSlots = [];
-	let paymentTypes = [];
+	let services = $state([]);
+	let departmentsData = $state([]);
+	let resourceData = $state([]);
+	let availableTimeSlots = $state([]);
 
 	// ── Filtre veriler ─────────────────────────────────────────────────────────
-	let filteredServices = [];
-	let filteredResources = [];
+	let filteredServices = $state([]);
+	let filteredResources = $state([]);
 
 	// ── Form ─────────────────────────────────────────────────────────
-	let bookingId;
-	let customerId;
-	let customerName;
-	let customerCountryCode;
-	let customerPhone;
-	let customerMail;
+	let bookingId = $state();
+	let customerId = $state(null);
+	let customerName = $state('');
+	let customerCountryCode = $state('+90');
+	let customerPhone = $state('');
+	let customerMail = $state('');
 
-	let bookingDescription;
+	let bookingDescription = $state('');
 
-	let selectedService = { value: null, name: null };
-	let selectedDepartment = { value: null, name: null };
-	let selectedResource = { value: null, name: null };
-	let status = 1;
-	let checkinDate = new Date().toISOString().split('T')[0];
-	let checkoutDate;
-	let saving = false;
-	let checkinTime = { id: null, value: null };
-	let checkoutTime;
+	let selectedService = $state({ value: '', name: '' });
+	let selectedDepartment = $state({ value: '', name: '' });
+	let selectedResource = $state({ value: '', name: '' });
+	let status = $state(1);
+	let checkinDate = $state(new Date().toISOString().split('T')[0]);
+	let checkoutDate = $state('');
+	let saving = $state(false);
+	let checkinTime = $state({ id: null, value: null });
+	let checkoutTime = $state('');
 
-	let paymentTypeID = '6fab21e0-73d2-4927-9d9a-77d2c4082b9a';
-	let paymentDescription = 'Peşin Ödeme';
+	let isPaymentEnabled = $state(false);
+	let paymentFormRef = $state();
+
+	let selectedServiceData = $derived.by(() => {
+		if (!selectedService.value) return null;
+		return services.find((x) => x.id == selectedService.value) || null;
+	});
 
 	// Conflict modu için recurrenceText ayarları ─────────────────────────────────────────────────────────
-	let recurrenceText;
-	let prefferedCheckinTime;
+	let recurrenceText = $state('');
+	let prefferedCheckinTime = $state('');
 
-	let recurrenceDays;
-	let recurrenceEvery;
-	let recurrenceType;
-
-	$: if (recurrenceDays && recurrenceEvery && recurrenceType) {
-		recurrenceText = getRecurrenceText(recurrenceType, recurrenceEvery, recurrenceDays);
-	}
+	let recurrenceDays = $state([]);
+	let recurrenceEvery = $state(0);
+	let recurrenceType = $state(0);
 
 	// Conflict özel değişkenler
 
-	let planOccurrenceId;
-	let bookingPlanId;
+	let planOccurrenceId = $state();
+	let bookingPlanId = $state(null);
 
 	// ── Slot filtre ayarları ─────────────────────────────────────────────────────────
 	const date = new Date();
@@ -111,44 +115,18 @@
 	date.setDate(date.getDate() + 4);
 	const maxDate = date.toISOString().split('T')[0];
 
-	$: isReady = customerName && customerPhone && selectedService && checkinTime.value && checkinDate;
-	$: initials = customerName
-		? customerName
-				.split(' ')
-				.map((w) => w[0])
-				.join('')
-				.slice(0, 2)
-				.toUpperCase()
-		: null;
+	// Departman, hizmet değişince sıfırlama
+	$effect(() => {
+		selectedDepartment;
 
-	$: formattedcheckinDate = checkinDate
-		? new Date(checkinDate).toLocaleDateString('tr-TR', {
-				day: 'numeric',
-				month: 'long',
-				year: 'numeric'
-			})
-		: null;
-
-	// $: checkoutDate = checkoutDate
-	// 	? new Date(checkoutDate).toLocaleDateString('tr-TR', {
-	// 			day: 'numeric',
-	// 			month: 'long',
-	// 			year: 'numeric'
-	// 		})
-	// 	: null;
-
-	$: {
-		filteredServices = selectedDepartment?.value
-			? services?.filter((s) => s.department_id == selectedDepartment.value)
-			: services;
-	}
-	$: filteredResources = selectedService?.value
-		? resourceData?.filter((r) => r.services.some((id) => id == selectedService.value))
-		: resourceData;
-
-	$: if (selectedService?.value && selectedResource?.value) {
-		getAvaliableTimes(selectedService.value, selectedResource.value, checkinDate, checkoutDate);
-	}
+		if (selectedDepartment.value) {
+			selectedService = { name: '', value: '' };
+			selectedResource = { name: '', value: '' };
+			checkinTime = { id: null, value: null };
+			checkoutTime = '';
+			availableTimeSlots = [];
+		}
+	});
 
 	async function getCustomers() {
 		let res = await Customer.getAll();
@@ -158,7 +136,8 @@
 	async function getDepartments() {
 		let res = await Department.getByCompanyId();
 
-		const department = res.find((x) => x.id == selectedDepartment.value);
+		const department = res?.find((x) => x.id == selectedDepartment.value);
+
 		selectedDepartment.name = department ? department.name : '';
 		return res;
 	}
@@ -166,7 +145,7 @@
 	async function getResources() {
 		let res = await Resource.getAll();
 
-		const unit = res.find((x) => x.id == selectedResource.value);
+		const unit = res?.find((x) => x.id == selectedResource.value);
 		selectedResource.name = unit ? unit.data.name : '';
 
 		return res;
@@ -175,7 +154,7 @@
 	async function getServices() {
 		let res = await Service.getByCompanyId();
 
-		const service = res.find((x) => x.id == selectedService.value);
+		const service = res?.find((x) => x.id == selectedService.value);
 		selectedService.name = service ? service.name : '';
 
 		return res;
@@ -252,28 +231,15 @@
 			res = await Booking.createBookingFromOccurrence(data);
 		} else if (pageMode == 1) {
 			data.id = bookingId;
+
 			res = await Booking.updateBooking(data);
 		} else {
 			let body = [data];
 			res = await Booking.createBooking(body);
 
-			let service = services.filter((x) => x.id == selectedService.value)[0];
-
-			let payment = {
-				booking_id: res.data[0].id,
-				payment_type_id: paymentTypeID,
-				currency_id: service.currency_id,
-				customer_id: customerId,
-				amount: service.price,
-				status: 2,
-				is_refund: 0,
-				installment_no: 1,
-				total_installments: 1,
-				description: paymentDescription,
-				paid_at: new Date().toISOString()
-			};
-
-			let paymentRes = await Finance.createPayment(payment);
+			if (isPaymentEnabled && paymentFormRef) {
+				await paymentFormRef.save(res.data[0].id, res.data[0].customer_id, selectedResource.value);
+			}
 		}
 		if (res) {
 			return true;
@@ -293,12 +259,12 @@
 
 	onMount(async () => {
 		if ($page.params.page == 'create') {
-			pageTitle = 'Yeni Rezervasyon';
+			pageTitle = 'Yeni Randevu';
 		} else if ($page.params.page == 'update') {
-			pageTitle = 'Rezervasyonu Düzenle';
+			pageTitle = 'Randevuyu Düzenle';
 			pageMode = 1;
 		} else if ($page.params.page == 'conflict') {
-			pageTitle = 'Rezervasyonu Düzenle';
+			pageTitle = 'Randevuyu Düzenle';
 			pageMode = 2;
 		} else {
 			goto('/reservations');
@@ -311,7 +277,7 @@
 				res = res[0];
 
 				bookingId = res.id;
-				customerId = res.customerId;
+				customerId = res.customer_id;
 				customerName = res.customer.name ?? res.customer_name;
 				customerCountryCode = res.customer.country_code ?? res.customer_country_code;
 				customerPhone = res.customer.phone ?? res.customer_phone;
@@ -363,6 +329,56 @@
 		// kalan api istekleri
 		await getInputDatas();
 	});
+	run(() => {
+		if (recurrenceDays && recurrenceEvery && recurrenceType) {
+			recurrenceText = getRecurrenceText(recurrenceType, recurrenceEvery, recurrenceDays);
+		}
+	});
+	let isReady = $derived(
+		customerName && customerPhone && selectedService && checkinTime.value && checkinDate
+	);
+	let initials = $derived(
+		customerName
+			? customerName
+					.split(' ')
+					.map((w) => w[0])
+					.join('')
+					.slice(0, 2)
+					.toUpperCase()
+			: null
+	);
+	let formattedcheckinDate = $derived(
+		checkinDate
+			? new Date(checkinDate).toLocaleDateString('tr-TR', {
+					day: 'numeric',
+					month: 'long',
+					year: 'numeric'
+				})
+			: null
+	);
+	// $: checkoutDate = checkoutDate
+	// 	? new Date(checkoutDate).toLocaleDateString('tr-TR', {
+	// 			day: 'numeric',
+	// 			month: 'long',
+	// 			year: 'numeric'
+	// 		})
+	// 	: null;
+
+	run(() => {
+		filteredServices = selectedDepartment?.value
+			? services?.filter((s) => s.department_id == selectedDepartment.value)
+			: services;
+	});
+	run(() => {
+		filteredResources = selectedService?.value
+			? resourceData?.filter((r) => r.services.some((id) => id == selectedService.value))
+			: resourceData;
+	});
+	run(() => {
+		if (selectedService?.value && selectedResource?.value) {
+			getAvaliableTimes(selectedService.value, selectedResource.value, checkinDate, checkoutDate);
+		}
+	});
 </script>
 
 <!-- ─── Page Header ──────────────────────────────────────────────────── -->
@@ -371,9 +387,9 @@
 		<h5 class="page-title">{pageTitle}</h5>
 		<p class="page-sub">Formu doldurun, özet anlık olarak güncellenir.</p>
 	</div>
-	<button class="back-btn" on:click={() => goto(pageMode == 2 ? '/' : '/reservations')}>
+	<button class="back-btn" onclick={() => goto(pageMode == 2 ? '/' : '/reservations')}>
 		<i class="bx bx-arrow-back"></i>
-		{pageMode == 2 ? 'Anasayfa' : 'Rezervasyonlar'}
+		{pageMode == 2 ? 'Anasayfa' : 'Randevular'}
 	</button>
 </div>
 
@@ -392,16 +408,16 @@
 						<div class="d-flex justify-content-end align-items-center gap-3">
 							{#if selectedCustomerData}
 								<div>
-									<!-- svelte-ignore a11y-click-events-have-key-events -->
-									<!-- svelte-ignore a11y-no-static-element-interactions -->
-									<span class="unselect-user" on:click={unselectCustomer}>Seçimi kaldır</span>
+									<!-- svelte-ignore a11y_click_events_have_key_events -->
+									<!-- svelte-ignore a11y_no_static_element_interactions -->
+									<span class="unselect-user" onclick={unselectCustomer}>Seçimi kaldır</span>
 								</div>
 							{/if}
 							<button
 								class="t-btn"
 								style="background-color: #f46481; padding: 5px 10px; border-radius: 4px;
 							color:white; border:none;"
-								on:click={() => (showModal = true)}
+								onclick={() => (showModal = true)}
 							>
 								<svg
 									xmlns="http://www.w3.org/2000/svg"
@@ -464,6 +480,7 @@
 						<Select
 							id="f-department"
 							icon="bx-briefcase"
+							bind:value={selectedDepartment.value}
 							on:change={(e) => {
 								const select = e.target;
 								const option = select.options[select.selectedIndex];
@@ -475,10 +492,8 @@
 							<option value="" disabled selected>Seçiniz…</option>
 							{#if departmentsData}
 								{#each departmentsData as department}
-									<option
-										value={department.id}
-										selected={department.id == selectedDepartment.value}
-										data-name={department.name}>{department.name}</option
+									<option value={department.id} data-name={department.name}
+										>{department.name}</option
 									>
 								{/each}
 							{/if}
@@ -491,6 +506,7 @@
 							disabled={!selectedDepartment.value}
 							id="f-service"
 							icon="bx-briefcase"
+							bind:value={selectedService.value}
 							on:change={(e) => {
 								const select = e.target;
 								const option = select.options[select.selectedIndex];
@@ -511,11 +527,7 @@
 							{#if filteredServices}
 								{#each filteredServices as service}
 									<!-- if selectedDepartment.value && selectedDepartment.value == -->
-									<option
-										value={service.id}
-										selected={service.id == selectedService.value}
-										data-name={service.name}>{service.name}</option
-									>
+									<option value={service.id} data-name={service.name}>{service.name}</option>
 								{/each}
 							{/if}
 						</Select>
@@ -527,6 +539,7 @@
 							disabled={!selectedService.value}
 							id="f-unit"
 							icon="bx-briefcase"
+							bind:value={selectedResource.value}
 							on:change={(e) => {
 								const select = e.target;
 								const option = select.options[select.selectedIndex];
@@ -540,7 +553,6 @@
 									<option
 										id={'opt-' + resource.id}
 										value={resource.id}
-										selected={resource.id == selectedResource.value}
 										data-name={resource.data.name}>{resource.data.name}</option
 									>
 								{/each}
@@ -594,7 +606,7 @@
 										? // !checkinTime.id kısmı update tarafında aynı anda iki butona class vermeyi engelliyor
 											'selected'
 										: ''}"
-									on:click={() => {
+									onclick={() => {
 										if (t.status != 0) {
 											checkinTime.id = t.id;
 											checkinTime.value = t.checkin_time;
@@ -610,20 +622,31 @@
 				<Col>
 					<label for="f-status">Durum</label>
 					<div class="status-toggle">
-						<button
-							class="toggle-btn {status == 1 ? 'active' : ''}"
-							on:click={() => (status = 1)}
-							type="button"
-						>
-							<i class="bx bx-check-circle"></i> Aktif
-						</button>
-						<button
-							class="toggle-btn danger {status == 0 ? 'active-danger' : ''}"
-							on:click={() => (status = 0)}
-							type="button"
-						>
-							<i class="bx bx-x-circle"></i> Pasif
-						</button>
+						{#each Object.entries(RESERVATION_STATUS_DETAILS).filter(([key]) => key !== '-1') as [valStr, detail]}
+							{@const val = Number(valStr)}
+							<button
+								class="toggle-btn {status == val
+									? val === 3 || val === 4
+										? 'danger active-danger'
+										: 'active'
+									: ''}"
+								onclick={() => (status = val)}
+								type="button"
+							>
+								<i
+									class="bx {val === 0
+										? 'bx-time-five'
+										: val === 1
+											? 'bx-check-circle'
+											: val === 2
+												? 'bx-check-double'
+												: val === 3
+													? 'bx-x-circle'
+													: 'bx-user-x'}"
+								></i>
+								{detail.title}
+							</button>
+						{/each}
 					</div>
 				</Col>
 				<Col width="12">
@@ -631,10 +654,43 @@
 					<Input
 						id="f-notes"
 						type="textarea"
-						placeholder="Rezervasyonla ilgili notlar..."
+						placeholder="Randevuyla ilgili notlar..."
 						bind:value={bookingDescription}
 					/>
 				</Col>
+
+				{#if pageMode === 0}
+					<div class="divider"></div>
+
+					<div class="section-title">
+						<span class="section-num">04</span>
+						Ödeme Bilgileri
+					</div>
+
+					<Col width="12">
+						<div class="sps-checkbox-group">
+							<input id="f-enable-payment" type="checkbox" bind:checked={isPaymentEnabled} />
+							<label for="f-enable-payment">Şimdi Ödeme Al / Ödeme Planı Oluştur</label>
+						</div>
+					</Col>
+
+					{#if isPaymentEnabled}
+						<Col width="12" class="mt-3">
+							<div class="payment-form-embedded">
+								<PaymentForm
+									bind:this={paymentFormRef}
+									compact={false}
+									showSubmitButton={false}
+									showBookingSelector={false}
+									isPriceLocked={true}
+									initialGrossAmount={selectedServiceData?.price || 0}
+									initialCurrencyId={selectedServiceData?.currency_id || ''}
+									{customerId}
+								/>
+							</div>
+						</Col>
+					{/if}
+				{/if}
 			</Row>
 		</div>
 	</Card>
@@ -734,14 +790,14 @@
 
 				<!-- Status Badge -->
 				<div class="summary-status">
-					<span class="status-dot {status == 1 ? 'green' : 'red'}"></span>
-					{status == 1 ? 'Aktif Rezervasyon' : 'Pasif Rezervasyon'}
+					<span class="status-dot {status === 1 || status === 2 ? 'green' : 'red'}"></span>
+					{RESERVATION_STATUS_DETAILS[status]?.title || 'Bilinmeyen'} Randevu
 				</div>
 
 				<!-- Save -->
 				<button
 					class="save-btn my-3 {isReady ? '' : 'disabled'}"
-					on:click={isReady ? handleSave : null}
+					onclick={isReady ? handleSave : null}
 					disabled={!isReady || saving}
 					type="button"
 				>
@@ -750,7 +806,7 @@
 					{:else if !isReady}
 						<i class="bx bx-lock-alt"></i> Alanları doldurun
 					{:else}
-						<i class="bx bx-save"></i> Rezervasyonu Kaydet
+						<i class="bx bx-save"></i> Randevuyu Kaydet
 					{/if}
 				</button>
 
@@ -1096,5 +1152,36 @@
 		.divider {
 			margin: 0 16px;
 		}
+	}
+
+	/* Embedded Payment Form styles */
+	.payment-form-embedded {
+		background: #f8fafc;
+		border: 1px solid #e2e8f0;
+		border-radius: 12px;
+		padding: 20px;
+		margin-top: 10px;
+		width: 100%;
+	}
+	.sps-checkbox-group {
+		display: flex;
+		align-items: center;
+		gap: 8px;
+		margin: 6px 0;
+		cursor: pointer;
+		user-select: none;
+	}
+	.sps-checkbox-group input[type='checkbox'] {
+		width: 14px;
+		height: 14px;
+		accent-color: #f5365c;
+		cursor: pointer;
+	}
+	.sps-checkbox-group label {
+		font-size: 13.5px;
+		font-weight: 600;
+		color: #334155;
+		cursor: pointer;
+		margin: 0;
 	}
 </style>

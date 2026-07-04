@@ -1,15 +1,20 @@
 <script>
+	import { run } from 'svelte/legacy';
+
 	import { formatPhoneDisplay } from '@utils/function';
 	// Dışarıya veya DB'ye gidecek olan SAF numara (örn: "5551234567")
-	export let value = '';
+	/** @type {{value?: string}} */
+	let { value = $bindable('') } = $props();
 
 	// Kullanıcının inputta göreceği FORMATLI numara (örn: "555 123 45 67")
-	let displayValue = '';
+	let displayValue = $state('');
 
 	// Dışarıdan value dolduğunda (örn: veritabanından veri çekildiğinde) ekrana formatlı yansıt
-	$: if (value !== undefined) {
-		displayValue = formatPhoneDisplay(value);
-	}
+	run(() => {
+		if (value !== undefined) {
+			displayValue = formatPhoneDisplay(value);
+		}
+	});
 
 	// Kullanıcı klavyeden bir şey yazdığında çalışacak fonksiyon
 	function handleInput(event) {
@@ -37,7 +42,7 @@
 <!-- UI Kısmı -->
 <div class="input-container">
 	<span class="country-code">+90</span>
-	<input type="text" placeholder="5XX XXX XX XX" value={displayValue} on:input={handleInput} />
+	<input type="text" placeholder="5XX XXX XX XX" value={displayValue} oninput={handleInput} />
 </div>
 
 <style>

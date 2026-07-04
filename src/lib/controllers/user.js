@@ -60,4 +60,23 @@ export class User {
 			return false;
 		}
 	};
+
+	static resetPassword = async (body, delay) => {
+		try {
+			let response = await Put(`${route}/reset-password`, body, true, false, delay);
+			toastCustom('Şifre başarıyla güncellendi!', 1);
+			return response;
+		} catch (error) {
+			return false;
+		}
+	};
+
+	static getMe = async (delay) => {
+		try {
+			let response = await Get(`${route}/get/me`, true, delay);
+			return response.data;
+		} catch (error) {
+			return false;
+		}
+	};
 }

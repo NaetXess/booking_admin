@@ -9,6 +9,7 @@
 		closeDropdown,
 		debounce
 	} from '@utils/function';
+	import { getReservationStatus } from '@functions/booking';
 
 	import Button from '@components/Button.svelte';
 	import Dropdown from '@components/Dropdown.svelte';
@@ -23,16 +24,16 @@
 
 	let bookings = [];
 	let paginationData = loadDefaultPagination();
-	let loading = false;
-	let filteredPaginationData = paginationData;
-	let filteredBookingData = [];
+	let loading = $state(false);
+	let filteredPaginationData = $state(paginationData);
+	let filteredBookingData = $state([]);
 
 	// QueryParams
-	let page = 1;
-	let pageSize = 10;
+	let page = $state(1);
+	let pageSize = $state(10);
 
-	let order = 'desc';
-	let sort = 'createdat';
+	let order = $state('desc');
+	let sort = $state('createdat');
 
 	function loadDefaultPagination() {
 		return {
@@ -69,21 +70,21 @@
 	// qu --> quick updater variable
 	let quActive = 1;
 
-	let selectedBooking;
+	let selectedBooking = $state();
 	// DELETE
-	let showModal = false;
+	let showModal = $state(false);
 
 	async function handleDeleteBooking() {
 		let res = await Booking.delete(selectedBooking.id);
 		if (res) {
 			selectedBooking = null;
-			bookings = bookings.filter((x) => x.id != res.data.id);
+			filteredBookingData = bookings.filter((x) => x.id != res.data.id);
 		}
 
 		showModal = false;
 	}
 	// Details
-	let modalOpen = false;
+	let modalOpen = $state(false);
 
 	function openDetailModal(reservation) {
 		selectedBooking = reservation;
@@ -132,15 +133,15 @@
 </script>
 
 <svelte:head>
-	<title>Rezervasyonlar | Xess Booking</title>
+	<title>Randevular | Xess Booking</title>
 	<meta name="description" content="Şirketinize ait randevuları yönetin." />
 </svelte:head>
 
 <PageHeader
-	title="Rezervasyonlar"
-	subTitle="Tüm rezervasyonları buradan yönetebilirsiniz."
+	title="Randevular"
+	subTitle="Tüm randevuları buradan yönetebilirsiniz."
 	url="/reservations/create/new"
-	btnTitle="Yeni Rezervasyon"
+	btnTitle="Yeni randevu"
 />
 
 <Card>
@@ -171,7 +172,7 @@
 					<th class="text-center">Randevu Tarihi</th>
 					<th class="text-center">Randevu Saati</th>
 					<th>Aldığı Hizmet</th>
-					<th>Durum</th>
+					<th class="text-center">Durum</th>
 					<th class="text-center">Oluşturulma Tarihi</th>
 					<th></th>
 				</tr>
@@ -201,6 +202,7 @@
 						{@const customerMail = booking.customer?.mail
 							? booking.customer.mail
 							: booking.customer_mail}
+						{@const bookingStatus = getReservationStatus(booking)}
 						<tr>
 							<td>
 								<div class="customer-cell">
@@ -225,12 +227,8 @@
 								><Badge theme="green">{booking.checkin_time.slice(0, 5)}</Badge></td
 							>
 							<td>{booking.service_name}</td>
-							<td>
-								{#if booking.status == 0}
-									<Badge danger>Pasif</Badge>
-								{:else if booking.status == 1}
-									<Badge primary>Aktif</Badge>
-								{/if}
+							<td class="text-center">
+								<Badge theme={bookingStatus.theme}>{bookingStatus.title}</Badge>
 
 								<!-- <Dropdown dropup id="quick-updater-dropdown-{booking.id}">
 									{#if booking.status == 0}
@@ -294,32 +292,32 @@
 							<td class="text-center">{formatDate(booking.createdat, 9)}</td>
 							<td>
 								<div class="row-actions">
-									<!-- svelte-ignore a11y-click-events-have-key-events -->
-									<!-- svelte-ignore a11y-no-static-element-interactions -->
-									<span class="action-btn view" on:click={() => openDetailModal(booking)}>
+									<!-- svelte-ignore a11y_click_events_have_key_events -->
+									<!-- svelte-ignore a11y_no_static_element_interactions -->
+									<span class="action-btn view" onclick={() => openDetailModal(booking)}>
 										<i class="bx bx-show"></i>
 									</span>
-									<!-- svelte-ignore a11y-click-events-have-key-events -->
-									<!-- svelte-ignore a11y-no-static-element-interactions -->
+									<!-- svelte-ignore a11y_click_events_have_key_events -->
+									<!-- svelte-ignore a11y_no_static_element_interactions -->
 									<span
 										class="action-btn link"
-										on:click={() => window.open(`/booking/${booking.id}`, '_blank')}
+										onclick={() => window.open(`/booking/${booking.id}`, '_blank')}
 									>
 										<i class="bx bx-link-alt"></i>
 									</span>
-									<!-- svelte-ignore a11y-click-events-have-key-events -->
-									<!-- svelte-ignore a11y-no-static-element-interactions -->
+									<!-- svelte-ignore a11y_click_events_have_key_events -->
+									<!-- svelte-ignore a11y_no_static_element_interactions -->
 									<span
 										class="action-btn edit"
-										on:click={() => goto(`reservations/update/${booking.id}`)}
+										onclick={() => goto(`reservations/update/${booking.id}`)}
 									>
 										<i class="bx bx-edit-alt"></i>
 									</span>
-									<!-- svelte-ignore a11y-click-events-have-key-events -->
-									<!-- svelte-ignore a11y-no-static-element-interactions -->
+									<!-- svelte-ignore a11y_click_events_have_key_events -->
+									<!-- svelte-ignore a11y_no_static_element_interactions -->
 									<span
 										class="action-btn delete"
-										on:click={() => {
+										onclick={() => {
 											showModal = true;
 											selectedBooking = booking;
 										}}
@@ -335,7 +333,7 @@
 						<td colspan="7" style="padding: 0;">
 							<div class="empty-row">
 								<i class="bx bx-calendar-x"></i>
-								Henüz rezervasyon bulunmuyor.
+								Henüz randevu bulunmuyor.
 							</div>
 						</td>
 					</tr>
@@ -345,9 +343,9 @@
 	</DataTable>
 </Card>
 
-<Modal bind:show={showModal} title="Rezervasyon Silme">
+<Modal bind:show={showModal} title="Randevu Silme">
 	<Confirmation
-		text={`Rezervasyonu silmek üzeresiniz! İşleme devam edilsin mi?`}
+		text={`Randevuyu silmek üzeresiniz! İşleme devam edilsin mi?`}
 		on:cancel={() => {
 			showModal = false;
 			selectedBooking = null;
@@ -359,7 +357,6 @@
 	bind:show={modalOpen}
 	reservation={selectedBooking}
 	on:edit={(e) => goto(`/reservations/update/${e.detail.id}`)}
-	on:close={() => console.log('kapatıldı')}
 />
 
 <style>

@@ -12,12 +12,12 @@
 	import Modal from '@components/Modal.svelte';
 	import Confirmation from '@components/helpers/Confirmation.svelte';
 
-	let departments = [];
-	let loading = false;
+	let departments = $state([]);
+	let loading = $state(false);
 
 	// DELETE
-	let showModal = false;
-	let selectedDepartment;
+	let showModal = $state(false);
+	let selectedDepartment = $state();
 
 	async function handleDeleteDepartment() {
 		let res = await Department.delete(selectedDepartment.id);
@@ -114,19 +114,19 @@
 							>
 							<td>
 								<div class="row-actions">
-									<!-- svelte-ignore a11y-click-events-have-key-events -->
-									<!-- svelte-ignore a11y-no-static-element-interactions -->
+									<!-- svelte-ignore a11y_click_events_have_key_events -->
+									<!-- svelte-ignore a11y_no_static_element_interactions -->
 									<span
 										class="action-btn edit"
-										on:click={() => goto(`/departments/update/${department.id}`)}
+										onclick={() => goto(`/departments/update/${department.id}`)}
 									>
 										<i class="bx bx-edit-alt"></i>
 									</span>
-									<!-- svelte-ignore a11y-click-events-have-key-events -->
-									<!-- svelte-ignore a11y-no-static-element-interactions -->
+									<!-- svelte-ignore a11y_click_events_have_key_events -->
+									<!-- svelte-ignore a11y_no_static_element_interactions -->
 									<span
 										class="action-btn delete"
-										on:click={() => {
+										onclick={() => {
 											showModal = true;
 											selectedDepartment = department;
 										}}

@@ -1,10 +1,15 @@
 <script>
 	import { onMount } from 'svelte';
 
-	export let dropup;
-	export let id;
+	/** @type {{dropup: any, id: any, children?: import('svelte').Snippet, menu?: import('svelte').Snippet}} */
+	let {
+		dropup,
+		id,
+		children,
+		menu
+	} = $props();
 
-	let dropDirection;
+	let dropDirection = $state();
 
 	onMount(() => {
 		if (dropup) {
@@ -14,8 +19,8 @@
 </script>
 
 <div {id} class="dropdown {dropDirection}">
-	<slot />
+	{@render children?.()}
 	<div class="dropdown-menu">
-		<slot name="menu" />
+		{@render menu?.()}
 	</div>
 </div>

@@ -1,11 +1,15 @@
 <script>
-    export let width = 12;
-    export let xs = undefined,
-      sm = undefined,
-      md = undefined,
-      lg = undefined,
-      xl = undefined,
-      style = "";
+  /** @type {{width?: number, xs?: any, sm?: any, md?: any, lg?: any, xl?: any, style?: string, children?: import('svelte').Snippet}} */
+  let {
+    width = 12,
+    xs = undefined,
+    sm = undefined,
+    md = undefined,
+    lg = undefined,
+    xl = undefined,
+    style = "",
+    children
+  } = $props();
   </script>
   
   <div
@@ -17,6 +21,6 @@
       {xl ? 'col-xl-' + xl : ''} 
       {style ? style : ' py-2'}"
   >
-    <slot />
+    {@render children?.()}
   </div>
   

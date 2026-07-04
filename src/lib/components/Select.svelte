@@ -1,15 +1,22 @@
 <script>
-	export let classess;
-	export let id;
-	export let value;
-	export let disabled;
-	export let icon;
+	import { createBubbler } from 'svelte/legacy';
+
+	const bubble = createBubbler();
+	/** @type {{classess: any, id: any, value: any, disabled: any, icon: any, children?: import('svelte').Snippet}} */
+	let {
+		classess,
+		id,
+		value = $bindable(),
+		disabled,
+		icon,
+		children
+	} = $props();
 </script>
 
 <div class="input-wrap select-wrap">
 	<i class="bx {icon}"></i>
-	<select on:change {disabled} bind:value class={classess} {id}>
-		<slot />
+	<select onchange={bubble('change')} {disabled} bind:value class={classess} {id}>
+		{@render children?.()}
 	</select>
 	<i class="bx bx-chevron-down chevron"></i>
 </div>

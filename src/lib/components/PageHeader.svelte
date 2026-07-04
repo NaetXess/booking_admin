@@ -2,10 +2,7 @@
 	import { goto } from '$app/navigation';
 	import Button from '@components/Button.svelte';
 
-	export let title;
-	export let subTitle;
-	export let url;
-	export let btnTitle;
+	let { title, subTitle, url, btnTitle, onclick } = $props();
 </script>
 
 <div class="page-header">
@@ -13,7 +10,7 @@
 		<h5 class="page-title">{title}</h5>
 		<p class="page-sub">{subTitle}</p>
 	</div>
-	<Button title={`+ ${btnTitle}`} primary on:click={() => goto(url)} />
+	<Button title={`+ ${btnTitle}`} primary on:click={url ? () => goto(url) : onclick} />
 </div>
 
 <style>

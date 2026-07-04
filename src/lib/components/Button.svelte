@@ -1,16 +1,22 @@
 <script>
+	import { createBubbler } from 'svelte/legacy';
+
+	const bubble = createBubbler();
 	import { onMount } from 'svelte';
 
-	export let id = '';
-	export let title = '';
-	export let disabled;
 
-	export let primary;
-	export let secondary;
-	export let warning;
-	export let danger;
+	/** @type {{id?: string, title?: string, disabled: any, primary: any, secondary: any, warning: any, danger: any}} */
+	let {
+		id = '',
+		title = '',
+		disabled,
+		primary,
+		secondary,
+		warning,
+		danger
+	} = $props();
 
-	let backgroundColor;
+	let backgroundColor = $state();
 
 	onMount(() => {
 		if (primary) {
@@ -25,7 +31,7 @@
 	});
 </script>
 
-<button {id} {disabled} class="t-btn" on:click style="background-color: {backgroundColor};"
+<button {id} {disabled} class="t-btn" onclick={bubble('click')} style="background-color: {backgroundColor};"
 	>{title}</button
 >
 

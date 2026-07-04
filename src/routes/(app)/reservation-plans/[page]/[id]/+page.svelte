@@ -1,4 +1,6 @@
 <script>
+	import { run } from 'svelte/legacy';
+
 	import { goto } from '$app/navigation';
 	import { page } from '$app/stores';
 	import { onMount } from 'svelte';
@@ -20,15 +22,15 @@
 	import DayPicker from '@components/custom/reservation_plans/DayPicker.svelte';
 
 	// ── Sayfa Ayarları ─────────────────────────────────────────────────────────
-	let isUpdate = false;
-	let pageTitle;
+	let isUpdate = $state(false);
+	let pageTitle = $state();
 
 	// ── CustomerSelector ─────────────────────────────────────────────────────────
-	let showModal = false;
-	let selectedCustomerData = null;
-	let disableCustomerInputs = false;
+	let showModal = $state(false);
+	let selectedCustomerData = $state(null);
+	let disableCustomerInputs = $state(false);
 
-	let customersList = [];
+	let customersList = $state([]);
 
 	function handleCustomerData(e) {
 		selectedCustomerData = e.detail;
@@ -48,70 +50,71 @@
 	}
 
 	// ── api'den gelen ─────────────────────────────────────────────────────────
-	let services = [];
-	let resources = [];
-	let departmentsData = [];
-	let availableTimeSlots = [];
+	let services = $state([]);
+	let resources = $state([]);
+	let departmentsData = $state([]);
+	let availableTimeSlots = $state([]);
 
 	// ── Filtre veriler ─────────────────────────────────────────────────────────
-	let filteredServices = [];
-	let filteredResources = [];
+	let filteredServices = $derived(
+		selectedDepartment?.value
+			? services?.filter((s) => s.department_id == selectedDepartment.value)
+			: services
+	);
+	let filteredResources = $derived(
+		selectedService?.value
+			? resources?.filter((r) => r.services.some((id) => id == selectedService.value))
+			: resources
+	);
 
 	// ── Form ─────────────────────────────────────────────────────────
 	let bookingPlanId;
-	let planName;
-	let customerId;
+	let planName = $state('');
+	let customerId = $state('');
 
-	let planNotes = '';
+	let planNotes = $state('');
 
-	let selectedService = { value: null, name: null };
-	let selectedDepartment = { value: null, name: null };
-	let selectedResource = { value: null, name: null };
-	let status = 1;
-	let saving = false;
+	let selectedService = $state({ value: '', name: '' });
+	let selectedDepartment = $state({ value: '', name: '' });
+	let selectedResource = $state({ value: '', name: '' });
+	let status = $state(1);
+	let saving = $state(false);
 
-	let startDate;
-	let timeOfDay;
+	let startDate = $state('');
+	let timeOfDay = $state('');
 
-	let recurrenceType; // [{val:1, name:günlük}, {val:2, name: haftalık}, {val:3, name:aylık}]
-	let recurrenceEvery = 1;
-	let recurrenceDays;
-	let totalOccurrences = 2;
+	let recurrenceType = $state(); // [{val:1, name:günlük}, {val:2, name: haftalık}, {val:3, name:aylık}]
+	let recurrenceEvery = $state(1);
+	let recurrenceDays = $state([]);
+	let totalOccurrences = $state(2);
 
 	// Summary
-	let customerName;
-	let customerPhone;
-	let customerMail;
+	let customerName = $state('');
+	let customerPhone = $state('');
+	let customerMail = $state('');
 
-	let recurrenceText = '';
-
-	$: if (recurrenceDays && recurrenceEvery && recurrenceType) {
-		recurrenceText = getRecurrenceText(recurrenceType, recurrenceEvery, recurrenceDays);
-	}
+	let recurrenceText = $derived.by(() => {
+		if (recurrenceDays && recurrenceEvery && recurrenceType) {
+			return getRecurrenceText(recurrenceType, recurrenceEvery, recurrenceDays);
+		}
+		return '';
+	});
 
 	// ── Slot filtre ayarları ─────────────────────────────────────────────────────────
 	const date = new Date();
 	const today = date.toISOString().split('T')[0];
 
-	$: isReady = customerId && selectedService;
-	$: initials = customerName
-		? customerName
-				.split(' ')
-				.map((w) => w[0])
-				.join('')
-				.slice(0, 2)
-				.toUpperCase()
-		: null;
-
-	$: {
-		filteredServices = selectedDepartment?.value
-			? services?.filter((s) => s.department_id == selectedDepartment.value)
-			: services;
-	}
-
-	$: filteredResources = selectedService?.value
-		? resources?.filter((r) => r.services.some((id) => id == selectedService.value))
-		: resources;
+	let isReady = $derived(customerId && selectedService);
+	let initials = $derived(
+		customerName
+			? customerName
+					.split(' ')
+					.map((w) => w[0])
+					.join('')
+					.slice(0, 2)
+					.toUpperCase()
+			: null
+	);
 
 	async function getCustomers() {
 		let res = await Customer.getAll();
@@ -121,7 +124,7 @@
 	async function getDepartments() {
 		let res = await Department.getByCompanyId();
 
-		const department = res.find((x) => x.id == selectedDepartment.value);
+		const department = res?.find((x) => x.id == selectedDepartment.value);
 		selectedDepartment.name = department ? department.name : '';
 		return res;
 	}
@@ -129,7 +132,7 @@
 	async function getServices() {
 		let res = await Service.getByCompanyId();
 
-		const service = res.find((x) => x.id == selectedService.value);
+		const service = res?.find((x) => x.id == selectedService.value);
 		selectedService.name = service ? service.name : '';
 
 		return res;
@@ -138,7 +141,7 @@
 	async function getResources() {
 		let res = await Resource.getAll();
 
-		const unit = res.find((x) => x.id == selectedResource.value);
+		const unit = res?.find((x) => x.id == selectedResource.value);
 		selectedResource.name = unit ? unit.data.name : '';
 
 		return res;
@@ -180,7 +183,6 @@
 		};
 
 		let res;
-		console.log(data);
 
 		if (isUpdate) {
 			data.id = bookingPlanId;
@@ -206,9 +208,9 @@
 
 	onMount(async () => {
 		if ($page.params.page == 'create') {
-			pageTitle = 'Yeni Rezervasyon';
+			pageTitle = 'Yeni Randevu';
 		} else if ($page.params.page == 'update') {
-			pageTitle = 'Rezervasyonu Düzenle';
+			pageTitle = 'Randevuyu Düzenle';
 			isUpdate = true;
 		} else {
 			goto('/reservation-plans');
@@ -251,9 +253,9 @@
 		<h5 class="page-title">{pageTitle}</h5>
 		<p class="page-sub">Formu doldurun, özet anlık olarak güncellenir.</p>
 	</div>
-	<button class="back-btn" on:click={() => goto('/reservation-plans')}>
+	<button class="back-btn" onclick={() => goto('/reservation-plans')}>
 		<i class="bx bx-arrow-back"></i>
-		Rezervasyon Planları
+		Randevu Planları
 	</button>
 </div>
 
@@ -265,24 +267,30 @@
 					<Col width="10">
 						<div class="section-title">
 							<span class="section-num">01</span>
-							Müşteri Bilgileri
+							<div class="d-flex flex-column">
+								<span>Müşteri Bilgileri</span>
+								<small class="text-danger" style="font-size: 9px;"
+									>Bu alanda müşteri seçimi zorunludur</small
+								>
+							</div>
 						</div>
 					</Col>
 					<Col width="2">
 						<div class="d-flex justify-content-end align-items-center gap-3">
 							{#if selectedCustomerData}
 								<div>
-									<!-- svelte-ignore a11y-click-events-have-key-events -->
-									<!-- svelte-ignore a11y-no-static-element-interactions -->
-									<span class="unselect-user" on:click={unselectCustomer}>Seçimi kaldır</span>
+									<!-- svelte-ignore a11y_click_events_have_key_events -->
+									<!-- svelte-ignore a11y_no_static_element_interactions -->
+									<span class="unselect-user" onclick={unselectCustomer}>Seçimi kaldır</span>
 								</div>
 							{/if}
 							<button
 								class="t-btn"
 								style="background-color: #f46481; padding: 5px 10px; border-radius: 4px;
 							color:white; border:none;"
-								on:click={() => (showModal = true)}
+								onclick={() => (showModal = true)}
 							>
+								Müşteri Seçin*
 								<svg
 									xmlns="http://www.w3.org/2000/svg"
 									width="20"
@@ -305,7 +313,7 @@
 							id="f-name"
 							placeholder="Kişi adı soyadı giriniz"
 							autoFilled={disableCustomerInputs}
-							disabled={disableCustomerInputs}
+							disabled={true}
 							bind:value={customerName}
 							icon={'bx-user'}
 						/>
@@ -315,7 +323,7 @@
 						<PhoneNumberInput
 							id="f-phone"
 							autoFilled={disableCustomerInputs}
-							disabled={disableCustomerInputs}
+							disabled={true}
 							bind:phoneValue={customerPhone}
 						/>
 					</Col>
@@ -326,7 +334,7 @@
 							placeholder="ornek@mail.com"
 							type="email"
 							autoFilled={disableCustomerInputs}
-							disabled={disableCustomerInputs}
+							disabled={true}
 							bind:value={customerMail}
 							icon={'bx-envelope'}
 						/>
@@ -445,7 +453,7 @@
 					<Col width="2">
 						<label for="f-time">Saat <span class="req">*</span></label>
 						<div class="input-wrap">
-							<Input id="f-time" type="time" bind:value={timeOfDay} icon="bx-calendar" />
+							<Input id="f-time" type="time" bind:value={timeOfDay} icon="bx-calendar" step={300} />
 						</div>
 					</Col>
 
@@ -501,7 +509,7 @@
 					<Input
 						id="f-notes"
 						type="textarea"
-						placeholder="Rezervasyonla ilgili notlar..."
+						placeholder="randevuyla ilgili notlar..."
 						bind:value={planNotes}
 					/>
 				</Col>
@@ -510,14 +518,14 @@
 					<div class="status-toggle">
 						<button
 							class="toggle-btn {status == 1 ? 'active' : ''}"
-							on:click={() => (status = 1)}
+							onclick={() => (status = 1)}
 							type="button"
 						>
 							<i class="bx bx-check-circle"></i> Aktif
 						</button>
 						<button
 							class="toggle-btn danger {status == 0 ? 'active-danger' : ''}"
-							on:click={() => (status = 0)}
+							onclick={() => (status = 0)}
 							type="button"
 						>
 							<i class="bx bx-x-circle"></i> Pasif
@@ -600,13 +608,13 @@
 				<!-- Status Badge -->
 				<div class="summary-status">
 					<span class="status-dot {status == 1 ? 'green' : 'red'}"></span>
-					{status == 1 ? 'Aktif Rezervasyon' : 'Pasif Rezervasyon'}
+					{status == 1 ? 'Aktif Randev' : 'Pasif Randev'}
 				</div>
 
 				<!-- Save -->
 				<button
 					class="save-btn my-3 {isReady ? '' : 'disabled'}"
-					on:click={isReady ? handleSave : null}
+					onclick={isReady ? handleSave : null}
 					disabled={!isReady || saving}
 					type="button"
 				>
@@ -615,7 +623,7 @@
 					{:else if !isReady}
 						<i class="bx bx-lock-alt"></i> Alanları doldurun
 					{:else}
-						<i class="bx bx-save"></i> Rezervasyonu Kaydet
+						<i class="bx bx-save"></i> Randevuyu Kaydet
 					{/if}
 				</button>
 

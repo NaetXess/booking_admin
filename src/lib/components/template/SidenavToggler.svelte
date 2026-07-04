@@ -5,7 +5,8 @@
 
 	const dispatch = createEventDispatcher();
 
-	export let theme;
+	/** @type {{theme: any}} */
+	let { theme } = $props();
 
 	onMount(() => {
 		let wrapper = document.getElementById('wrapper');
@@ -24,11 +25,11 @@
 	});
 </script>
 
-<!-- svelte-ignore a11y-click-events-have-key-events -->
-<!-- svelte-ignore a11y-no-static-element-interactions -->
+<!-- svelte-ignore a11y_click_events_have_key_events -->
+<!-- svelte-ignore a11y_no_static_element_interactions -->
 <div
 	class="d-flex sidenav-toggler"
-	on:click={() => {
+	onclick={() => {
 		window.innerWidth > 1024 ? handleResizeSidebar() : handleSidebarCollapse();
 
 		dispatch('collapse', {

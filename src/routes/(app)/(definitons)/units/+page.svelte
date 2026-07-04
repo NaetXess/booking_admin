@@ -13,15 +13,15 @@
 	import Modal from '@components/Modal.svelte';
 	import Confirmation from '@components/helpers/Confirmation.svelte';
 
-	let resources = [];
-	let loading = false;
+	let resources = $state([]);
+	let loading = $state(false);
 
 	// qu --> quick updatder variable
-	let quActive = 1;
+	let quActive = $state(1);
 
 	// DELETE
-	let showModal = false;
-	let selectedResource;
+	let showModal = $state(false);
+	let selectedResource = $state();
 
 	async function handleDeleteResource() {
 		let res = await Resource.delete(selectedResource.id);
@@ -128,69 +128,71 @@
 											>
 										{/if}
 
-										<div slot="menu">
-											<div class="tools px-3">
-												<button
-													class="danger"
-													on:click={() => {
-														closeDropdown(`quick-updater-dropdown-${resource.id}`);
-													}}
-												>
-													<i class="bx bx-x"></i>
-												</button>
-												<button class="primary">
-													<i class="bx bx-check"></i>
-												</button>
-											</div>
-
-											<div class="body change-unit-active text-center mt-4 px-3">
-												<div class="d-flex justify-content-center mb-3">
-													{#if quActive == 0}
-														<button
-															class="active-status-selection danger"
-															on:click={() => {
-																quActive = 1;
-															}}>Pasif</button
-														>
-													{:else if quActive == 1}
-														<button
-															class="active-status-selection primary"
-															on:click={() => {
-																quActive = 0;
-															}}>Aktif</button
-														>
-													{/if}
+										{#snippet menu()}
+											<div>
+												<div class="tools px-3">
+													<button
+														class="danger"
+														onclick={() => {
+															closeDropdown(`quick-updater-dropdown-${resource.id}`);
+														}}
+													>
+														<i class="bx bx-x"></i>
+													</button>
+													<button class="primary">
+														<i class="bx bx-check"></i>
+													</button>
 												</div>
 
-												<small class="info">
-													*Bu kaydın aktiflik durumunu
-													{#if quActive == 1}
-														<span class="primary">aktif</span>
-													{:else if quActive == 0}
-														<span class="danger">pasif</span>
-													{/if}
-													olarak günceller.
-												</small>
+												<div class="body change-unit-active text-center mt-4 px-3">
+													<div class="d-flex justify-content-center mb-3">
+														{#if quActive == 0}
+															<button
+																class="active-status-selection danger"
+																onclick={() => {
+																	quActive = 1;
+																}}>Pasif</button
+															>
+														{:else if quActive == 1}
+															<button
+																class="active-status-selection primary"
+																onclick={() => {
+																	quActive = 0;
+																}}>Aktif</button
+															>
+														{/if}
+													</div>
+
+													<small class="info">
+														*Bu kaydın aktiflik durumunu
+														{#if quActive == 1}
+															<span class="primary">aktif</span>
+														{:else if quActive == 0}
+															<span class="danger">pasif</span>
+														{/if}
+														olarak günceller.
+													</small>
+												</div>
 											</div>
-										</div>
+										{/snippet}
 									</Dropdown>
 								</div>
 							</td>
 							<td>
 								<div class="row-actions">
-									<!-- svelte-ignore a11y-click-events-have-key-events -->
-									<!-- svelte-ignore a11y-no-static-element-interactions -->
+									<!-- svelte-ignore a11y_click_events_have_key_events -->
+									<!-- svelte-ignore a11y_no_static_element_interactions -->
 									<span
 										class="action-btn edit"
-										on:click={() => goto(`/units/update/${resource.id}`)}
+										onclick={() => goto(`/units/update/${resource.id}`)}
 									>
 										<i class="bx bx-edit-alt"></i>
 									</span>
-									<!-- svelte-ignore a11y-click-events-have-key-events -->
-									<!-- svelte-ignore a11y-no-static-element-interactions -->
+									<!-- svelte-ignore a11y_click_events_have_key_events -->
+									<!-- svelte-ignore a11y_no_static_element_interactions -->
 									<span
 										class="action-btn delete"
-										on:click={() => {
+										onclick={() => {
 											showModal = true;
 											selectedResource = resource;
 										}}

@@ -1,8 +1,11 @@
 <script>
+	import { createBubbler, stopPropagation } from 'svelte/legacy';
+
+	const bubble = createBubbler();
 	import { createEventDispatcher, onMount } from 'svelte';
 
-	export let title = '';
-	export let show = false;
+	/** @type {{title?: string, show?: boolean, children?: import('svelte').Snippet}} */
+	let { title = '', show = $bindable(false), children } = $props();
 
 	const dispatch = createEventDispatcher();
 
@@ -17,16 +20,16 @@
 	}
 </script>
 
-<svelte:window on:keydown={handleKeydown} />
+<svelte:window onkeydown={handleKeydown} />
 
 {#if show}
-	<!-- svelte-ignore a11y-click-events-have-key-events -->
-	<!-- svelte-ignore a11y-no-static-element-interactions -->
-	<div class="modal-backdrop" on:click={close}>
-		<div class="modal-content" on:click|stopPropagation>
+	<!-- svelte-ignore a11y_click_events_have_key_events -->
+	<!-- svelte-ignore a11y_no_static_element_interactions -->
+	<div class="modal-backdrop">
+		<div class="modal-content" onclick={stopPropagation(bubble('click'))}>
 			<div class="modal-header">
 				<h3 class="modal-title">{title}</h3>
-				<button class="close-btn" on:click={close}>
+				<button class="close-btn" onclick={close}>
 					<svg
 						width="24"
 						height="24"
@@ -44,7 +47,7 @@
 			</div>
 
 			<div class="modal-body">
-				<slot />
+				{@render children?.()}
 			</div>
 		</div>
 	</div>

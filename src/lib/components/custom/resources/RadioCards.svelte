@@ -1,5 +1,6 @@
 <script>
-	export let value = 'personnel';
+	/** @type {{value?: string}} */
+	let { value = $bindable('personnel') } = $props();
 
 	const options = [
 		{
@@ -35,7 +36,7 @@
 			type="button"
 			class="radio-card {option.active == 1 ? 'active-card' : ''}"
 			class:selected={value === option.id}
-			on:click={() => (option.active == 1 ? (value = option.id) : '')}
+			onclick={() => (option.active == 1 ? (value = option.id) : '')}
 		>
 			<div class="card-icon">
 				<i class={option.icon}></i>

@@ -13,15 +13,15 @@
 	import Modal from '@components/Modal.svelte';
 	import Confirmation from '@components/helpers/Confirmation.svelte';
 
-	let bookingPlans = [];
-	let loading = false;
+	let bookingPlans = $state([]);
+	let loading = $state(false);
 
 	// qu --> quick updater variable
 	let quActive = 1;
 
 	// DELETE
-	let showModal = false;
-	let selectedBooking;
+	let showModal = $state(false);
+	let selectedBooking = $state();
 
 	async function handleDeletePlan() {
 		let res = await BookingPlan.delete(selectedBooking.id);
@@ -49,13 +49,13 @@
 </script>
 
 <svelte:head>
-	<title>Planlı Rezervasyonlar | Xess Booking</title>
+	<title>Planlı Randevular | Xess Booking</title>
 	<meta name="description" content="Şirketinize ait randevuları yönetin." />
 </svelte:head>
 
 <PageHeader
-	title="Rezervasyon Planları"
-	subTitle="Rezervasyon planlarınızı buradan yönetebilirsiniz."
+	title="Randevu Planları"
+	subTitle="Randevu planlarınızı buradan yönetebilirsiniz."
 	url="/reservation-plans/create/new"
 	btnTitle="Yeni Plan"
 />
@@ -136,19 +136,19 @@
 
 							<td>
 								<div class="row-actions">
-									<!-- svelte-ignore a11y-click-events-have-key-events -->
-									<!-- svelte-ignore a11y-no-static-element-interactions -->
+									<!-- svelte-ignore a11y_click_events_have_key_events -->
+									<!-- svelte-ignore a11y_no_static_element_interactions -->
 									<span
 										class="action-btn edit"
-										on:click={() => goto(`reservation-plans/update/${plan.id}`)}
+										onclick={() => goto(`reservation-plans/update/${plan.id}`)}
 									>
 										<i class="bx bx-edit-alt"></i>
 									</span>
-									<!-- svelte-ignore a11y-click-events-have-key-events -->
-									<!-- svelte-ignore a11y-no-static-element-interactions -->
+									<!-- svelte-ignore a11y_click_events_have_key_events -->
+									<!-- svelte-ignore a11y_no_static_element_interactions -->
 									<span
 										class="action-btn delete"
-										on:click={() => {
+										onclick={() => {
 											showModal = true;
 											selectedBooking = plan;
 										}}
@@ -164,7 +164,7 @@
 						<td colspan="7" style="padding: 0;">
 							<div class="empty-row">
 								<i class="bx bx-calendar-x"></i>
-								Henüz rezervasyon bulunmuyor.
+								Henüz randevu bulunmuyor.
 							</div>
 						</td>
 					</tr>
@@ -174,9 +174,9 @@
 	</DataTable>
 </Card>
 
-<Modal bind:show={showModal} title="Rezervasyon Silme">
+<Modal bind:show={showModal} title="Randevu Silme">
 	<Confirmation
-		text={`Rezervasyonu silmek üzeresiniz! İşleme devam edilsin mi?`}
+		text={`Randevuyu silmek üzeresiniz! İşleme devam edilsin mi?`}
 		on:cancel={() => {
 			showModal = false;
 			selectedBooking = null;

@@ -1,11 +1,12 @@
 <script>
 	import { onMount } from 'svelte';
 
-	export let alternativeDesign;
+	/** @type {{alternativeDesign: any, children?: import('svelte').Snippet}} */
+	let { alternativeDesign, children } = $props();
 	//
 
-	let cardBg = 'white';
-	let textColor = 'black';
+	let cardBg = $state('white');
+	let textColor = $state('black');
 
 	onMount(() => {
 		if (alternativeDesign) {
@@ -16,7 +17,7 @@
 </script>
 
 <div class="t-card" style="background: {cardBg}; color: {textColor};">
-	<slot />
+	{@render children?.()}
 </div>
 
 <style>

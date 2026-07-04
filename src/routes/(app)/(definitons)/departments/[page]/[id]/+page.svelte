@@ -10,15 +10,15 @@
 	import Select from '@components/Select.svelte';
 	import Button from '@components/Button.svelte';
 
-	let pageTitle;
+	let pageTitle = $state();
 
 	let id;
-	let name;
-	let status = 1;
-	let active = 1;
+	let name = $state();
+	let status = $state(1);
+	let active = $state(1);
 
 	let isUpdate = 0;
-	let saving = false;
+	let saving = $state(false);
 
 	async function handleDepartmentUpsert() {
 		let data = {
@@ -115,7 +115,7 @@
 					secondary
 					title="Vazgeç"
 					on:click={() => {
-						console.log('vazgeç');
+						goto('/departments');
 					}}
 				/>
 				<Button primary title="Kaydet" disabled={saving} on:click={handleSave} />

@@ -10,21 +10,22 @@
 	import Button from '@components/Button.svelte';
 	import Modal from '@components/Modal.svelte';
 	import Confirmation from '@components/helpers/Confirmation.svelte';
+	import PageHeader from '@components/PageHeader.svelte';
 
-	let customers = [];
+	let customers = $state([]);
 
-	let loading = true;
+	let loading = $state(true);
 
-	let pageSize = 10;
+	let pageSize = $state(10);
 	let currentPage = 1;
 
 	// Detail / edit drawer
-	let drawerOpen = false;
-	let drawerMode = 'view'; // 'view' | 'edit' | 'create'
-	let selectedCustomer = null;
+	let drawerOpen = $state(false);
+	let drawerMode = $state('view'); // 'view' | 'edit' | 'create'
+	let selectedCustomer = $state(null);
 
 	// New/edit form
-	let form = emptyForm();
+	let form = $state(emptyForm());
 
 	function emptyForm() {
 		return {
@@ -41,19 +42,21 @@
 	}
 
 	// ─── Filtering / sorting / pagination ────────────────────────────────────
-	$: totalCount = customers.length;
-	$: activeCount = customers.filter((c) => c.active === 1).length;
-	$: verifiedCount = customers.filter((c) => c.verified === 1).length;
-	$: todayCount = customers.filter((c) => {
-		if (!c.createdat) return false;
-		const d = new Date(c.createdat);
-		const now = new Date();
-		return (
-			d.getFullYear() === now.getFullYear() &&
-			d.getMonth() === now.getMonth() &&
-			d.getDate() === now.getDate()
-		);
-	}).length;
+	let totalCount = $derived(customers.length);
+	let activeCount = $derived(customers.filter((c) => c.active === 1).length);
+	let verifiedCount = $derived(customers.filter((c) => c.verified === 1).length);
+	let todayCount = $derived(
+		customers.filter((c) => {
+			if (!c.createdat) return false;
+			const d = new Date(c.createdat);
+			const now = new Date();
+			return (
+				d.getFullYear() === now.getFullYear() &&
+				d.getMonth() === now.getMonth() &&
+				d.getDate() === now.getDate()
+			);
+		}).length
+	);
 
 	// ─── Drawer helpers ───────────────────────────────────────────────────────
 	function openView(customer) {
@@ -95,8 +98,8 @@
 	}
 
 	// DELETE
-	let showModal = false;
-	let selectedCustomerForDelete;
+	let showModal = $state(false);
+	let selectedCustomerForDelete = $state();
 
 	async function handleDeleteCustomer() {
 		let res = await Customer.delete(selectedCustomerForDelete.id);
@@ -138,17 +141,17 @@
 	}
 
 	// ── Static mock data (API ile değişecek) ─────────────────────────────────
-	const staticBalance = { amount: 750, currency: '₺', note: 'Kasım seansı ödemesi eksik' };
+	const staticBalance = { amount: 0, currency: '₺', note: 'Devre dışı' };
 
 	// ── Detail modal (geçmiş & planlı randevular) ─────────────────────────────
-	let detailModalOpen = false;
-	let detailCustomer = null;
-	let detailTab = 'past';
+	let detailModalOpen = $state(false);
+	let detailCustomer = $state(null);
+	let detailTab = $state('past');
 
-	let detailLoading = false;
+	let detailLoading = $state(false);
 
-	let plannedBookings = [];
-	let bookingHistory = [];
+	let plannedBookings = $state([]);
+	let bookingHistory = $state([]);
 
 	async function openDetailModal(customer, _detailTab) {
 		detailLoading = true;
@@ -177,8 +180,8 @@
 	}
 
 	// ── Balance modal ─────────────────────────────────────────────────────────
-	let balanceModalOpen = false;
-	let balanceCustomer = null;
+	let balanceModalOpen = $state(false);
+	let balanceCustomer = $state(null);
 
 	function openBalanceModal(customer) {
 		balanceCustomer = customer;
@@ -211,10 +214,12 @@
 
 <!-- ═══════════════════════════════════════════════════════════════════════════ -->
 
-<div class="d-flex justify-content-between align-items-center">
-	<h5 class="my-5 page-title">Müşteriler</h5>
-	<Button title="Yeni Müşteri" primary on:click={openCreate} />
-</div>
+<PageHeader
+	onclick={openCreate}
+	title="Müşteriler"
+	subTitle="Tüm müşterilerinizi buradan yönetebilirsiniz."
+	btnTitle="Yeni Müşteri"
+/>
 
 <!-- Stats Row -->
 <div class="stats-row mb-4">
@@ -383,8 +388,8 @@
 							<!-- Status -->
 							<td>
 								<div class="p-2">
-									<!-- svelte-ignore a11y-click-events-have-key-events -->
-									<!-- svelte-ignore a11y-no-static-element-interactions -->
+									<!-- svelte-ignore a11y_click_events_have_key_events -->
+									<!-- svelte-ignore a11y_no_static_element_interactions -->
 									<span
 										class="status-toggle {customer.active === 1 ? 'active' : 'inactive'}"
 										title="Durumu değiştir"
@@ -399,13 +404,13 @@
 							</td>
 							<!-- Randevular -->
 							<td>
-								<!-- svelte-ignore a11y-click-events-have-key-events -->
-								<!-- svelte-ignore a11y-no-static-element-interactions -->
+								<!-- svelte-ignore a11y_click_events_have_key_events -->
+								<!-- svelte-ignore a11y_no_static_element_interactions -->
 								<div class="p-2 appt-cell">
 									<span
 										class="appt-badge past"
 										title="Geçmiş randevular"
-										on:click={() => openDetailModal(customer, 'past')}
+										onclick={() => openDetailModal(customer, 'past')}
 									>
 										<i class="bx bx-history"></i>
 										Geçmiş
@@ -413,7 +418,7 @@
 									<span
 										class="appt-badge planned"
 										title="Planlı randevular"
-										on:click={() => openDetailModal(customer, 'planned')}
+										onclick={() => openDetailModal(customer, 'planned')}
 									>
 										<i class="bx bx-calendar-check"></i>
 										Planlı
@@ -422,32 +427,33 @@
 							</td>
 							<!-- Bakiye -->
 							<td>
-								<!-- svelte-ignore a11y-click-events-have-key-events -->
-								<!-- svelte-ignore a11y-no-static-element-interactions -->
+								<!-- svelte-ignore a11y_click_events_have_key_events -->
+								<!-- svelte-ignore a11y_no_static_element_interactions -->
 								<div class="p-2">
-									<span class="balance-badge" on:click={() => openBalanceModal(customer)}>
+									<span class="balance-badge" onclick={() => openBalanceModal(customer)}>
 										<i class="bx bx-wallet-alt"></i>
-										{staticBalance.amount}{staticBalance.currency}
+										Geçici olarak devre dışı
+										<!-- {staticBalance.amount}{staticBalance.currency} -->
 									</span>
 								</div>
 							</td>
 							<!-- Actions -->
 							<td>
 								<div class="p-2 table-row-tools">
-									<!-- svelte-ignore a11y-click-events-have-key-events -->
-									<!-- svelte-ignore a11y-no-static-element-interactions -->
-									<i class="bx bx-show view" title="Görüntüle" on:click={() => openView(customer)}
+									<!-- svelte-ignore a11y_click_events_have_key_events -->
+									<!-- svelte-ignore a11y_no_static_element_interactions -->
+									<i class="bx bx-show view" title="Görüntüle" onclick={() => openView(customer)}
 									></i>
-									<!-- svelte-ignore a11y-click-events-have-key-events -->
-									<!-- svelte-ignore a11y-no-static-element-interactions -->
-									<i class="bx bx-edit-alt edit" title="Düzenle" on:click={() => openEdit(customer)}
+									<!-- svelte-ignore a11y_click_events_have_key_events -->
+									<!-- svelte-ignore a11y_no_static_element_interactions -->
+									<i class="bx bx-edit-alt edit" title="Düzenle" onclick={() => openEdit(customer)}
 									></i>
-									<!-- svelte-ignore a11y-click-events-have-key-events -->
-									<!-- svelte-ignore a11y-no-static-element-interactions -->
+									<!-- svelte-ignore a11y_click_events_have_key_events -->
+									<!-- svelte-ignore a11y_no_static_element_interactions -->
 									<i
 										class="bx bx-trash delete"
 										title="Sil"
-										on:click={() => {
+										onclick={() => {
 											showModal = true;
 											selectedCustomerForDelete = customer;
 										}}
@@ -481,9 +487,9 @@
 
 <!-- ── Drawer Overlay ─────────────────────────────────────────────────────── -->
 {#if drawerOpen}
-	<!-- svelte-ignore a11y-click-events-have-key-events -->
-	<!-- svelte-ignore a11y-no-static-element-interactions -->
-	<div class="drawer-overlay" on:click={closeDrawer}></div>
+	<!-- svelte-ignore a11y_click_events_have_key_events -->
+	<!-- svelte-ignore a11y_no_static_element_interactions -->
+	<div class="drawer-overlay" onclick={closeDrawer}></div>
 	<div class="drawer" class:open={drawerOpen}>
 		<div class="drawer-header">
 			<h6>
@@ -495,9 +501,9 @@
 					Müşteri Detayı
 				{/if}
 			</h6>
-			<!-- svelte-ignore a11y-click-events-have-key-events -->
-			<!-- svelte-ignore a11y-no-static-element-interactions -->
-			<span class="drawer-close" on:click={closeDrawer}><i class="bx bx-x"></i></span>
+			<!-- svelte-ignore a11y_click_events_have_key_events -->
+			<!-- svelte-ignore a11y_no_static_element_interactions -->
+			<span class="drawer-close" onclick={closeDrawer}><i class="bx bx-x"></i></span>
 		</div>
 
 		<div class="drawer-body">
@@ -576,7 +582,7 @@
 				</div>
 
 				<div class="drawer-actions mt-4">
-					<button class="btn-secondary" on:click={() => openEdit(selectedCustomer)}>
+					<button class="btn-secondary" onclick={() => openEdit(selectedCustomer)}>
 						<i class="bx bx-edit-alt"></i> Düzenle
 					</button>
 				</div>
@@ -634,8 +640,8 @@
 				</div>
 
 				<div class="drawer-actions mt-4">
-					<button class="btn-ghost" on:click={closeDrawer}>İptal</button>
-					<button class="btn-primary" on:click={handleUpsert}>
+					<button class="btn-ghost" onclick={closeDrawer}>İptal</button>
+					<button class="btn-primary" onclick={handleUpsert}>
 						<i class="bx bx-check"></i>
 						{drawerMode === 'create' ? 'Kaydet' : 'Güncelle'}
 					</button>
@@ -647,9 +653,9 @@
 
 <!-- ── Detail Modal (Randevular) ──────────────────────────────────────────── -->
 {#if detailModalOpen && detailCustomer}
-	<!-- svelte-ignore a11y-click-events-have-key-events -->
-	<!-- svelte-ignore a11y-no-static-element-interactions -->
-	<div class="modal-overlay" on:click={closeDetailModal}></div>
+	<!-- svelte-ignore a11y_click_events_have_key_events -->
+	<!-- svelte-ignore a11y_no_static_element_interactions -->
+	<div class="modal-overlay" onclick={closeDetailModal}></div>
 	<div class="modal-box">
 		<div class="modal-header">
 			<div class="modal-title-wrap">
@@ -661,28 +667,28 @@
 					<div class="modal-subtitle">Randevu Geçmişi</div>
 				</div>
 			</div>
-			<!-- svelte-ignore a11y-click-events-have-key-events -->
-			<!-- svelte-ignore a11y-no-static-element-interactions -->
-			<span class="modal-close" on:click={closeDetailModal}><i class="bx bx-x"></i></span>
+			<!-- svelte-ignore a11y_click_events_have_key_events -->
+			<!-- svelte-ignore a11y_no_static_element_interactions -->
+			<span class="modal-close" onclick={closeDetailModal}><i class="bx bx-x"></i></span>
 		</div>
 
 		<div class="modal-tabs">
-			<!-- svelte-ignore a11y-click-events-have-key-events -->
-			<!-- svelte-ignore a11y-no-static-element-interactions -->
+			<!-- svelte-ignore a11y_click_events_have_key_events -->
+			<!-- svelte-ignore a11y_no_static_element_interactions -->
 			<span
 				class="modal-tab"
 				class:active={detailTab === 'past'}
-				on:click={() => (detailTab = 'past')}
+				onclick={() => (detailTab = 'past')}
 			>
 				<i class="bx bx-history"></i> Geçmiş Randevular
 				<span class="tab-count">{bookingHistory.length}</span>
 			</span>
-			<!-- svelte-ignore a11y-click-events-have-key-events -->
-			<!-- svelte-ignore a11y-no-static-element-interactions -->
+			<!-- svelte-ignore a11y_click_events_have_key_events -->
+			<!-- svelte-ignore a11y_no_static_element_interactions -->
 			<span
 				class="modal-tab"
 				class:active={detailTab === 'planned'}
-				on:click={() => (detailTab = 'planned')}
+				onclick={() => (detailTab = 'planned')}
 			>
 				<i class="bx bx-calendar-check"></i> Planlı Randevular
 				<span class="tab-count planned">{plannedBookings.length}</span>
@@ -760,9 +766,9 @@
 
 <!-- ── Balance Modal ───────────────────────────────────────────────────────── -->
 {#if balanceModalOpen && balanceCustomer}
-	<!-- svelte-ignore a11y-click-events-have-key-events -->
-	<!-- svelte-ignore a11y-no-static-element-interactions -->
-	<div class="modal-overlay" on:click={closeBalanceModal}></div>
+	<!-- svelte-ignore a11y_click_events_have_key_events -->
+	<!-- svelte-ignore a11y_no_static_element_interactions -->
+	<div class="modal-overlay" onclick={closeBalanceModal}></div>
 	<div class="modal-box balance-modal">
 		<div class="modal-header">
 			<div class="modal-title-wrap">
@@ -772,9 +778,9 @@
 					<div class="modal-subtitle">Açık Bakiye</div>
 				</div>
 			</div>
-			<!-- svelte-ignore a11y-click-events-have-key-events -->
-			<!-- svelte-ignore a11y-no-static-element-interactions -->
-			<span class="modal-close" on:click={closeBalanceModal}><i class="bx bx-x"></i></span>
+			<!-- svelte-ignore a11y_click_events_have_key_events -->
+			<!-- svelte-ignore a11y_no_static_element_interactions -->
+			<span class="modal-close" onclick={closeBalanceModal}><i class="bx bx-x"></i></span>
 		</div>
 		<div class="modal-body">
 			<div class="balance-amount-card">
@@ -785,7 +791,7 @@
 				{/if}
 			</div>
 			<div class="balance-footer">
-				<button class="btn-ghost" on:click={closeBalanceModal}>Kapat</button>
+				<button class="btn-ghost" onclick={closeBalanceModal}>Kapat</button>
 				<button class="btn-primary"><i class="bx bx-check"></i> Ödeme Al</button>
 			</div>
 		</div>

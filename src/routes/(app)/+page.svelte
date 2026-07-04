@@ -5,36 +5,52 @@
 	import { Booking } from '@controllers/booking';
 	import { BookingPlan } from '@controllers/booking_plan';
 	import { formatDate } from '@utils/function';
+	import { getReservationStatus } from '@functions/booking';
 	import ConflictOccurrences from '@components/custom/dashboard/ConflictOccurrences.svelte';
 	import Row from '@components/Row.svelte';
 	import Col from '@components/Col.svelte';
 	import Modal from '@components/Modal.svelte';
+	import ReservationDetailModal from '@components/custom/reservation/ReservationDetails.svelte';
+	import Badge from '@components/Badge.svelte';
 
 	let stats = {
 		totalDepartments: 0,
 		totalServices: 0,
 		totalUsers: 0,
 		totalBookings: 0,
+		totalCancelledBookings: 0,
+		totalCompletedBookings: 0,
+		totalNoshowBookings: 0,
 		activeBookings: 0
 	};
 
+	// Details
+	let modalOpen = $state(false);
+	let selectedBooking = $state(null);
+
+	function openDetailModal(reservation) {
+		selectedBooking = reservation;
+		modalOpen = true;
+	}
+
 	//
-	let conflicts = [];
+	let conflicts = $state([]);
 
 	// --- Static Data ---
 	const today = new Date();
 
 	// KPI cards
-	let kpiCards;
+	let kpiCards = $state();
 
 	// Weekly chart
-	let weekDays = ['Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cmt', 'Paz'];
+	let weekDays = $state(['Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cmt', 'Paz']);
 	// let weekData = [8, 12, 6, 15, 10, 18, 12];
-	let weekData = [];
-	let maxVal;
+	let weekData = $state([]);
+	let maxVal = $state();
 
-	let todayReservations = [];
-	let showModalDailyRes = false;
+	let upcomingReservations = $state([]);
+	let todaysReservations = $state([]);
+	let showModalDailyRes = $state(false);
 
 	function fmt(date) {
 		return date.toLocaleDateString('tr-TR', { weekday: 'short', day: 'numeric', month: 'short' });
@@ -99,14 +115,14 @@
 	// Quick actions
 	const quickActions = [
 		{
-			label: 'Yeni Rezervasyon',
+			label: 'Yeni Randevu',
 			icon: 'bx-calendar-plus',
 			href: '/reservations/create/new',
 			primary: true
 		},
 		{ label: 'Hizmet Ekle', icon: 'bx-plus-circle', href: '/services', primary: false },
 		{ label: 'Departman Ekle', icon: 'bx-store', href: '/departments', primary: false },
-		{ label: 'Tüm Rezervasyonlar', icon: 'bx-list-ul', href: '/reservations', primary: false }
+		{ label: 'Tüm Randevular', icon: 'bx-list-ul', href: '/reservations', primary: false }
 	];
 	// Load Data
 	async function getStats() {
@@ -117,39 +133,42 @@
 			stats.totalUsers = totalStatsData.total_users || 0;
 			stats.totalServices = totalStatsData.total_services || 0;
 			stats.activeBookings = totalStatsData.active_bookings || 0;
+			stats.totalNoshowBookings = totalStatsData.total_noshow_bookings || 0;
+			stats.totalCancelledBookings = totalStatsData.total_cancelled_bookings || 0;
+			stats.totalCompletedBookings = totalStatsData.total_completed_bookings || 0;
 
 			kpiCards = [
 				{
-					title: 'Toplam Rezervasyon',
+					title: 'Toplam Randevular',
 					value: stats.totalBookings,
-					sub: '+3 dünden --',
+					sub: 'Tüm zamanlar',
 					icon: 'bx-calendar-check',
 					color: '#F5365C',
 					light: 'rgba(245,54,92,0.1)'
 				},
 				{
-					title: 'Aktif Rezervasyon',
-					value: stats.activeBookings,
-					sub: 'Devam ediyor',
-					icon: 'bx-check-circle',
+					title: 'Tamamlanan Randevu',
+					value: stats.totalCompletedBookings,
+					sub: 'Tüm zamanlar',
+					icon: ' bx-check-circle',
 					color: '#2DCE89',
 					light: 'rgba(45,206,137,0.1)'
 				},
 				{
-					title: 'İptal / Pasif',
-					value: '-',
-					sub: 'Bu hafta',
-					icon: 'bx-x-circle',
-					color: '#FB6340',
-					light: 'rgba(251,99,64,0.1)'
-				},
-				{
-					title: 'Toplam Hizmet',
-					value: stats.totalServices,
-					sub: '- yeni eklendi',
+					title: 'Aktif Randevu',
+					value: stats.activeBookings,
+					sub: 'Tüm zamanlar',
 					icon: 'bx-briefcase',
 					color: '#11CDEF',
 					light: 'rgba(17,205,239,0.1)'
+				},
+				{
+					title: 'İptal / Pasif',
+					value: stats.totalCancelledBookings,
+					sub: 'Tüm zamanlar',
+					icon: 'bx-x-circle',
+					color: '#FB6340',
+					light: 'rgba(251,99,64,0.1)'
 				}
 			];
 		}
@@ -186,20 +205,20 @@
 			weekData = weekData;
 			maxVal = Math.max(...weekData);
 		}
-		let today = new Date();
-		let tomorrow = new Date();
 
-		tomorrow.setDate(today.getDate() + 1);
+		let today = new Date();
+
 		let dailyBookings = await Booking.getAllByCompanyId({
 			page_size: 5,
 			start: today.toISOString().split('T')[0],
-			end: tomorrow.toISOString().split('T')[0],
+			end: today.toISOString().split('T')[0],
 			sort: 'checkin_time',
-			order: 'desc'
+			order: 'asc',
+			period: 'upcoming'
 		});
 
 		if (dailyBookings) {
-			todayReservations = dailyBookings?.items ?? [];
+			upcomingReservations = dailyBookings?.items ?? [];
 		}
 	}
 	async function getConflicts() {
@@ -207,6 +226,20 @@
 		if (res) {
 			conflicts = res;
 		}
+	}
+
+	async function getTodaysReservations() {
+		let today = new Date();
+
+		let res = await Booking.getAllByCompanyId({
+			start: today.toISOString().split('T')[0],
+			end: today.toISOString().split('T')[0],
+			sort: 'checkin_time',
+			order: 'asc',
+			status: [1, 2]
+		});
+
+		todaysReservations = res?.items ?? [];
 	}
 
 	async function loadData() {
@@ -245,7 +278,7 @@
 			{#each quickActions as action}
 				<button
 					class="qa-btn {action.primary ? 'qa-primary' : 'qa-secondary'}"
-					on:click={() => goto(action.href)}
+					onclick={() => goto(action.href)}
 				>
 					<i class="bx {action.icon}"></i>
 					<span>{action.label}</span>
@@ -281,22 +314,25 @@
 				<div class="card-header">
 					<div>
 						<span class="card-title">Bugünün Randevuları</span>
-						<span class="card-sub">{todayReservations.length} kayıt</span>
+						<span class="card-sub">{upcomingReservations.length} kayıt</span>
 					</div>
-					<!-- svelte-ignore a11y-missing-attribute -->
+
 					<a
 						class="see-all"
 						href="#"
-						on:click={() => (showModalDailyRes = true)}
+						onclick={() => {
+							getTodaysReservations();
+							showModalDailyRes = true;
+						}}
 						style="cursor:pointer"
 					>
 						Tümü <i class="bx bx-right-arrow-alt"></i>
 					</a>
 				</div>
 				<div class="today-list">
-					{#if todayReservations.length > 0}
-						{#each todayReservations as r}
-							{@const customerName = r.customer.name || r.customer_name}
+					{#if upcomingReservations.length > 0}
+						{#each upcomingReservations as r}
+							{@const customerName = r.customer?.name || r.customer_name}
 							<div class="today-row">
 								<div class="tr-time">{r.checkin_time.slice(0, 5)}</div>
 								<div class="tr-avatar">
@@ -310,17 +346,33 @@
 									<div class="tr-name">{customerName}</div>
 									<div class="tr-service">{r.service_name}</div>
 								</div>
-								<div class="tr-badge {r.status === 1 ? 'badge-active' : 'badge-passive'}">
-									{r.status === 1 ? 'Aktif' : 'Pasif'}
-								</div>
+
+								<span class="action-btn view" onclick={() => openDetailModal(r)}>
+									<i class="bx bx-show"></i>
+								</span>
 							</div>
 						{/each}
 					{:else}
-						Bugün için randevu kaydı bulunamadı
+						<div class="empty-today">
+							<div class="empty-today-icon">
+								<i class="bx bx-calendar-x"></i>
+							</div>
+							<div class="empty-today-title">Bugün randevu yok</div>
+							<div class="empty-today-sub">Bugüne ait henüz bir randevu kaydı oluşturulmamış.</div>
+							<button class="empty-today-btn" onclick={() => goto('/reservations/create/new')}>
+								<i class="bx bx-plus"></i> Randevu Oluştur
+							</button>
+						</div>
 					{/if}
 				</div>
 			</div>
 		</Col>
+
+		<ReservationDetailModal
+			bind:show={modalOpen}
+			reservation={selectedBooking}
+			on:edit={(e) => goto(`/reservations/update/${e.detail.id}`)}
+		/>
 
 		<Col width="12"
 			><div class="t-card chart-card">
@@ -361,8 +413,8 @@
 								{fmt(calendarDays[0].date)} – {fmt(calendarDays[4].date)}
 							</span>
 						</div>
-						<!-- svelte-ignore a11y-missing-attribute -->
-						<a class="see-all" on:click={() => goto('/calendar')} style="cursor:pointer">
+						<!-- svelte-ignore a11y_missing_attribute -->
+						<a class="see-all" onclick={() => goto('/calendar')} style="cursor:pointer">
 							Takvim <i class="bx bx-right-arrow-alt"></i>
 						</a>
 					</div>
@@ -454,12 +506,108 @@
 	</Row>
 </div>
 
-<Modal bind:show={showModalDailyRes} title="Günlük Rezervasyonlar">
-	<button
-		on:click={() => {
-			showModalDailyRes = false;
-		}}>Kapat</button
-	>
+<Modal bind:show={showModalDailyRes} title="Bugünün Randevuları">
+	<div class="daily-modal">
+		<!-- Başlık / Özet -->
+		<div class="daily-modal-header">
+			<div class="daily-date-badge">
+				<i class="bx bx-calendar-check"></i>
+				{today.toLocaleDateString('tr-TR', { weekday: 'long', day: 'numeric', month: 'long' })}
+			</div>
+			<div class="daily-count-badge">
+				{todaysReservations.length} randevu
+			</div>
+		</div>
+
+		<!-- Liste -->
+		{#if todaysReservations.length > 0}
+			<div class="daily-list">
+				{#each todaysReservations as r}
+					{@const customerName = r.customer?.name || r.customer_name || '—'}
+					{@const bookingStatus = getReservationStatus(r)}
+					{@const initials = customerName
+						.split(' ')
+						.map((w) => w[0])
+						.join('')
+						.slice(0, 2)
+						.toUpperCase()}
+
+					<div class="daily-item">
+						<!-- Sol: Saat çizgisi -->
+						<div class="daily-time-col">
+							<span class="daily-time">{r.checkin_time?.slice(0, 5) ?? '--:--'}</span>
+							<div class="daily-time-line"></div>
+						</div>
+
+						<!-- Kart -->
+						<div class="daily-item-card">
+							<div class="daily-item-left">
+								<div class="daily-avatar">{initials}</div>
+								<div class="daily-item-info">
+									<div class="daily-item-name">{customerName}</div>
+									<div class="daily-item-meta">
+										<i class="bx bx-briefcase"></i>
+										{r.service_name ?? '—'}
+										{#if r.resource?.name}
+											<span class="daily-dot">·</span>
+											<i class="bx bx-user"></i>
+											{r.resource.name}
+										{/if}
+									</div>
+									<div class="daily-item-time-range">
+										<i class="bx bx-time"></i>
+										{r.checkin_time?.slice(0, 5)} – {r.checkout_time?.slice(0, 5)}
+									</div>
+								</div>
+							</div>
+							<div class="daily-item-right">
+								<Badge theme={bookingStatus.theme}>{bookingStatus.title}</Badge>
+								<button
+									class="daily-detail-btn"
+									onclick={() => {
+										showModalDailyRes = false;
+										openDetailModal(r);
+									}}
+								>
+									<i class="bx bx-show"></i>
+								</button>
+							</div>
+						</div>
+					</div>
+				{/each}
+			</div>
+		{:else}
+			<div class="daily-empty">
+				<div class="daily-empty-icon">
+					<i class="bx bx-calendar-x"></i>
+				</div>
+				<div class="daily-empty-title">Bugün randevu yok</div>
+				<div class="daily-empty-sub">Bugüne ait henüz bir randevu kaydı oluşturulmamış.</div>
+				<button
+					class="empty-today-btn"
+					onclick={() => {
+						showModalDailyRes = false;
+						goto('/reservations/create/new');
+					}}
+				>
+					<i class="bx bx-plus"></i> Randevu Oluştur
+				</button>
+			</div>
+		{/if}
+
+		<!-- Footer -->
+		<div class="daily-modal-footer">
+			<button
+				class="daily-footer-link"
+				onclick={() => {
+					showModalDailyRes = false;
+					goto('/reservations');
+				}}
+			>
+				<i class="bx bx-list-ul"></i> Tüm Randevulara Git
+			</button>
+		</div>
+	</div>
 </Modal>
 
 <style>
@@ -731,6 +879,68 @@
 		color: #fb6340;
 	}
 
+	/* Empty State - Bugün */
+	.empty-today {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		justify-content: center;
+		gap: 8px;
+		padding: 24px 16px;
+		text-align: center;
+		height: 100%;
+	}
+	.empty-today-icon {
+		width: 56px;
+		height: 56px;
+		border-radius: 16px;
+		background: linear-gradient(135deg, rgba(245, 54, 92, 0.08), rgba(245, 54, 92, 0.15));
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		margin-bottom: 4px;
+	}
+	.empty-today-icon i {
+		font-size: 26px;
+		color: #f5365c;
+		opacity: 0.7;
+	}
+	.empty-today-title {
+		font-size: 14px;
+		font-weight: 700;
+		color: #2d3a52;
+	}
+	.empty-today-sub {
+		font-size: 12px;
+		color: #9aa3b0;
+		max-width: 200px;
+		line-height: 1.5;
+	}
+	.empty-today-btn {
+		display: inline-flex;
+		align-items: center;
+		gap: 5px;
+		margin-top: 8px;
+		padding: 7px 16px;
+		border-radius: 8px;
+		border: none;
+		background: linear-gradient(135deg, #f5365c, #f4226d);
+		color: white;
+		font-size: 12px;
+		font-weight: 600;
+		cursor: pointer;
+		transition:
+			opacity 150ms ease,
+			transform 150ms ease;
+	}
+	.empty-today-btn:hover {
+		opacity: 0.9;
+		transform: translateY(-1px);
+	}
+	.empty-today-btn i {
+		font-size: 14px;
+	}
+
 	/* 5-Day Calendar Placeholder */
 	.calendar-card {
 		display: flex;
@@ -894,5 +1104,242 @@
 		display: flex;
 		align-items: center;
 		gap: 4px;
+	}
+
+	/* ── Daily Modal ───────────────────────────────────────── */
+	.daily-modal {
+		display: flex;
+		flex-direction: column;
+		gap: 16px;
+		min-width: 480px;
+	}
+	.daily-modal-header {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		padding-bottom: 12px;
+		border-bottom: 1.5px solid #f0f2f5;
+	}
+	.daily-date-badge {
+		display: flex;
+		align-items: center;
+		gap: 7px;
+		font-size: 13.5px;
+		font-weight: 600;
+		color: #252c38;
+	}
+	.daily-date-badge i {
+		font-size: 18px;
+		color: #f5365c;
+	}
+	.daily-count-badge {
+		background: rgba(245, 54, 92, 0.1);
+		color: #f5365c;
+		font-size: 12px;
+		font-weight: 600;
+		padding: 4px 12px;
+		border-radius: 20px;
+	}
+
+	/* Zaman çizgisi liste */
+	.daily-list {
+		display: flex;
+		flex-direction: column;
+		gap: 0;
+		max-height: 460px;
+		overflow-y: auto;
+		padding-right: 4px;
+	}
+	.daily-item {
+		display: flex;
+		align-items: stretch;
+		gap: 12px;
+	}
+	.daily-time-col {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		width: 44px;
+		flex-shrink: 0;
+		padding-top: 14px;
+	}
+	.daily-time {
+		font-size: 11.5px;
+		font-weight: 700;
+		color: #7a8699;
+		white-space: nowrap;
+	}
+	.daily-time-line {
+		flex: 1;
+		width: 2px;
+		background: #f0f2f5;
+		margin-top: 6px;
+		min-height: 16px;
+	}
+	.daily-item:last-child .daily-time-line {
+		display: none;
+	}
+	.daily-item-card {
+		flex: 1;
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		background: #fafbfc;
+		border: 1.5px solid #ebedf0;
+		border-radius: 10px;
+		padding: 10px 14px;
+		margin-bottom: 8px;
+		gap: 10px;
+		transition:
+			border-color 150ms,
+			box-shadow 150ms;
+	}
+	.daily-item-card:hover {
+		border-color: rgba(245, 54, 92, 0.3);
+		box-shadow: 0 2px 10px rgba(245, 54, 92, 0.07);
+	}
+	.daily-item-left {
+		display: flex;
+		align-items: center;
+		gap: 10px;
+	}
+	.daily-avatar {
+		width: 36px;
+		height: 36px;
+		border-radius: 50%;
+		background: linear-gradient(135deg, #f5365c, #f4226d);
+		color: white;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		font-size: 12px;
+		font-weight: 700;
+		flex-shrink: 0;
+	}
+	.daily-item-info {
+		display: flex;
+		flex-direction: column;
+		gap: 2px;
+	}
+	.daily-item-name {
+		font-size: 13.5px;
+		font-weight: 600;
+		color: #252c38;
+	}
+	.daily-item-meta {
+		font-size: 11.5px;
+		color: #7a8699;
+		display: flex;
+		align-items: center;
+		gap: 4px;
+	}
+	.daily-item-meta i {
+		font-size: 12px;
+	}
+	.daily-dot {
+		color: #c4cad4;
+	}
+	.daily-item-time-range {
+		font-size: 11px;
+		color: #9aa3b0;
+		display: flex;
+		align-items: center;
+		gap: 4px;
+		margin-top: 1px;
+	}
+	.daily-item-right {
+		display: flex;
+		align-items: center;
+		gap: 8px;
+		flex-shrink: 0;
+	}
+	.daily-detail-btn {
+		width: 30px;
+		height: 30px;
+		border-radius: 7px;
+		border: 1.5px solid #ebedf0;
+		background: white;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		cursor: pointer;
+		color: #7a8699;
+		transition: all 150ms;
+	}
+	.daily-detail-btn:hover {
+		border-color: #f5365c;
+		color: #f5365c;
+		background: rgba(245, 54, 92, 0.05);
+	}
+	.daily-detail-btn i {
+		font-size: 15px;
+	}
+	.badge-cancel {
+		background: rgba(155, 106, 245, 0.12);
+		color: #7c4de8;
+	}
+
+	/* Boş durum */
+	.daily-empty {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		gap: 8px;
+		padding: 40px 16px;
+		text-align: center;
+	}
+	.daily-empty-icon {
+		width: 60px;
+		height: 60px;
+		border-radius: 16px;
+		background: rgba(245, 54, 92, 0.08);
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		margin-bottom: 4px;
+	}
+	.daily-empty-icon i {
+		font-size: 28px;
+		color: #f5365c;
+		opacity: 0.7;
+	}
+	.daily-empty-title {
+		font-size: 15px;
+		font-weight: 700;
+		color: #2d3a52;
+	}
+	.daily-empty-sub {
+		font-size: 12px;
+		color: #9aa3b0;
+		max-width: 220px;
+		line-height: 1.5;
+	}
+
+	/* Footer */
+	.daily-modal-footer {
+		padding-top: 12px;
+		border-top: 1.5px solid #f0f2f5;
+		display: flex;
+		justify-content: center;
+	}
+	.daily-footer-link {
+		display: flex;
+		align-items: center;
+		gap: 6px;
+		font-size: 13px;
+		font-weight: 600;
+		color: #f5365c;
+		background: none;
+		border: none;
+		cursor: pointer;
+		padding: 6px 12px;
+		border-radius: 7px;
+		transition: background 150ms;
+	}
+	.daily-footer-link:hover {
+		background: rgba(245, 54, 92, 0.07);
+	}
+	.daily-footer-link i {
+		font-size: 16px;
 	}
 </style>

@@ -3,11 +3,10 @@
 	import { createEventDispatcher } from 'svelte';
 	// const dispatch = createEventDispatcher();
 
-	export let value = null; // seçilen kullanıcının id'si
-	export let height = '100%'; // dışarıdan ayarlanabilir
-	export let users = []; // [{ id, name, verified }]
+	/** @type {{value?: any, height?: string, users?: any}} */
+	let { value = $bindable(null), height = '100%', users = [] } = $props();
 
-	let query = '';
+	let query = $state('');
 
 	// $: dispatch('input', {
 	// 	data: {
@@ -42,7 +41,7 @@
 		return COLORS[Math.abs(hash) % COLORS.length];
 	}
 
-	$: filtered = users.filter((u) => u.name.toLowerCase().includes(query.toLowerCase()));
+	let filtered = $derived(users.filter((u) => u.name.toLowerCase().includes(query.toLowerCase())));
 </script>
 
 <div class="picker">
@@ -51,7 +50,7 @@
 		<i class="bx bx-search"></i>
 		<input type="text" placeholder="Kullanıcı ara..." bind:value={query} />
 		{#if query}
-			<button class="clear" on:click={() => (query = '')}>
+			<button class="clear" onclick={() => (query = '')}>
 				<i class="bx bx-x"></i>
 			</button>
 		{/if}
@@ -67,7 +66,7 @@
 			<button
 				class="user-row"
 				class:selected={value === user.id}
-				on:click={() => (value = user.id)}
+				onclick={() => (value = user.id)}
 			>
 				<!-- Avatar -->
 				<div class="avatar" style="background:{avatarColor(user.name)}">

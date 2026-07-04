@@ -19,39 +19,43 @@
 	import StaffForm from '@components/custom/resources/StaffForm.svelte';
 
 	let isUpdate = false;
-	let pageTitle;
-	let saving = false;
-	let loading = true;
+	let pageTitle = $state();
+	let saving = $state(false);
+	let loading = $state(true);
 
 	let id;
-	let status = 1;
-	let active = 1;
-	let formType = 1;
-	let selectedServices = [];
+	let status = $state(1);
+	let active = $state(1);
+	let formType = $state(1);
+	let selectedServices = $state([]);
 
-	let departments = [];
-	let services = [];
-	let departmentId;
-	let formDatas = {};
+	let departments = $state([]);
+	let services = $state([]);
+	let departmentId = $state('');
+	let formDatas = $state({});
 
-	let resourceFormStaff = {
+	let resourceFormStaff = $state({
 		id: '',
 		name: '',
 		limit: 1,
-		beginAt: '09:00',
-		endAt: '18:00',
+		beginat: '09:00',
+		endat: '18:00',
 		user_id: ''
-	};
+	});
 
 	async function handleUnitUpsert() {
 		let obj = {
-			department_id: departmentId,
+			department_id: departmentId || undefined,
 			status: Number(status),
 			active: Number(active),
 			type: formType,
 			services: selectedServices,
-			data: {}
+			data: { ...resourceFormStaff }
 		};
+
+		if (!obj.department_id) delete obj.department_id;
+		if (!obj.data.id) delete obj.data.id;
+		if (!obj.data.user_id) delete obj.data.user_id;
 
 		let res;
 
@@ -59,15 +63,13 @@
 			1: {
 				create: Resource.createStaff,
 				update: Resource.updateStaff,
-				getData: () => resourceFormStaff
+				getData: () => obj.data
 			}
 		};
 
 		const handler = handlers[formType];
 
 		if (!handler) return;
-
-		obj.data = resourceFormStaff;
 
 		res = isUpdate ? await handler.update({ ...obj, id }) : await handler.create(obj);
 
@@ -107,7 +109,7 @@
 			Service.getByCompanyId()
 		]);
 
-		formDatas.users = users;
+		formDatas.users = users.items;
 		formDatas.services = services;
 
 		if (departments && departments.length == 1) {
@@ -131,8 +133,8 @@
 					resourceFormStaff.id = res.data.id;
 					resourceFormStaff.name = res.data.name;
 					resourceFormStaff.limit = res.data.limit;
-					resourceFormStaff.beginAt = res.data.beginat;
-					resourceFormStaff.endAt = res.data.endat;
+					resourceFormStaff.beginat = res.data.beginat;
+					resourceFormStaff.endat = res.data.endat;
 					resourceFormStaff.user_id = res.data.user_id;
 					break;
 				case 2:
@@ -173,8 +175,8 @@
 				/>
 				<Col width="6">
 					<label for="res-dep"
-						>Departman Seçin
-						<Tooltip text="Personelin uygulamada görünecek adı veya ünvanı." position="top">
+						>Departman Seçin (opsiyonel)
+						<Tooltip text="Bu kaynağın hangi departmanın altında görüneceğini seçer" position="top">
 							<i class="bx bx-info-circle" style="color:#aaa; cursor:default"></i>
 						</Tooltip>
 					</label>
@@ -184,10 +186,10 @@
 							departmentId = e.target.value;
 						}}
 					>
-						{#if departments.length > 1}
+						{#if !departments || departments.length > 1}
 							<option selected disabled>Departman Seçiniz..</option>
 						{/if}
-						{#if departments.length > 0}
+						{#if departments && departments.length > 0}
 							{#each departments as department}
 								<option value={department.id} selected={departmentId == department.id}
 									>{department.name}</option
@@ -200,12 +202,12 @@
 				<Col width="6">
 					<label for="">
 						Hizmet Seçimi
-						<Tooltip text="Personelin günlük maksimum randevu sayısı" position="top">
+						<Tooltip text="Bu kaynağın hangi hizmetleri verebileceğini seçer" position="top">
 							<i class="bx bx-info-circle" style="color:#aaa; cursor:default"></i>
 						</Tooltip>
 					</label>
 					<MultiSelect
-						options={services}
+						options={services ?? []}
 						placeholder="Hizmet Seçiniz..."
 						bind:selected={selectedServices}
 					/>
@@ -214,7 +216,7 @@
 				<Col width="6">
 					<label for="res-status">
 						Durum
-						<Tooltip text="Personelin uygulamada görünecek adı veya ünvanı." position="top">
+						<Tooltip text="Kaynak durumu" position="top">
 							<i class="bx bx-info-circle" style="color:#aaa; cursor:default"></i>
 						</Tooltip>
 					</label>
@@ -231,7 +233,7 @@
 				<Col width="6">
 					<label for="res-active">
 						Aktif
-						<Tooltip text="Personelin uygulamada görünecek adı veya ünvanı." position="top">
+						<Tooltip text="Kaynak durumu" position="top">
 							<i class="bx bx-info-circle" style="color:#aaa; cursor:default"></i>
 						</Tooltip>
 					</label>

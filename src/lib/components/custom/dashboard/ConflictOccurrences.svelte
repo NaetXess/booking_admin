@@ -1,7 +1,9 @@
 <script>
 	import { goto } from '$app/navigation';
 	import { formatDate } from '@utils/function';
-	export let conflicts = [];
+
+	/** @type {{conflicts?: any}} */
+	let { conflicts = [] } = $props();
 
 	function goToPlan(id) {
 		goto(`/reservations/conflict/${id}`);
@@ -29,8 +31,11 @@
 	<div class="conflict-list">
 		{#if conflicts.length === 0}
 			<div class="empty-state">
-				<i class="bx bx-check-circle"></i>
-				<p>Çakışan randevu bulunmuyor</p>
+				<div class="empty-icon-wrap">
+					<i class="bx bx-check-shield"></i>
+				</div>
+				<div class="empty-title">Her şey yolunda!</div>
+				<div class="empty-sub">Henüz çakışan veya müdahale gerektiren bir randevu bulunmuyor.</div>
 			</div>
 		{:else}
 			{#each conflicts as item (item.id)}
@@ -60,7 +65,7 @@
 							</div>
 						</div>
 					</div>
-					<button class="go-btn" on:click={() => goToPlan(item.id)} title="Plana git">
+					<button class="go-btn" onclick={() => goToPlan(item.id)} title="Plana git">
 						<i class="bx bx-right-arrow-alt"></i>
 					</button>
 				</div>
@@ -85,13 +90,11 @@
 		padding: 1rem 1.25rem;
 		border-bottom: 1px solid #f1f1f1;
 	}
-
 	.header-left {
 		display: flex;
 		align-items: center;
 		gap: 0.75rem;
 	}
-
 	.icon-wrap {
 		width: 38px;
 		height: 38px;
@@ -102,12 +105,10 @@
 		justify-content: center;
 		flex-shrink: 0;
 	}
-
 	.icon-wrap i {
 		font-size: 1.2rem;
 		color: #f5365c;
 	}
-
 	.widget-title {
 		font-size: 0.9rem;
 		font-weight: 600;
@@ -115,13 +116,11 @@
 		margin: 0;
 		line-height: 1.2;
 	}
-
 	.widget-subtitle {
 		font-size: 0.75rem;
 		color: #9ba3af;
 		margin: 0;
 	}
-
 	.count-badge {
 		background: rgba(245, 54, 92, 0.12);
 		color: #f5365c;
@@ -147,14 +146,8 @@
 		transition: background 120ms ease;
 		gap: 0.75rem;
 	}
-
-	.conflict-item:hover {
-		background: #fafafa;
-	}
-
-	.conflict-item:not(:last-child) {
-		border-bottom: 1px solid #f5f5f5;
-	}
+	.conflict-item:hover { background: #fafafa; }
+	.conflict-item:not(:last-child) { border-bottom: 1px solid #f5f5f5; }
 
 	.item-left {
 		display: flex;
@@ -163,7 +156,6 @@
 		flex: 1;
 		min-width: 0;
 	}
-
 	.item-dot {
 		width: 8px;
 		height: 8px;
@@ -172,14 +164,12 @@
 		flex-shrink: 0;
 		margin-top: 5px;
 	}
-
 	.item-info {
 		display: flex;
 		flex-direction: column;
 		gap: 0.15rem;
 		min-width: 0;
 	}
-
 	.item-customer {
 		font-size: 0.85rem;
 		font-weight: 600;
@@ -188,19 +178,13 @@
 		overflow: hidden;
 		text-overflow: ellipsis;
 	}
-
-	.item-service {
-		font-size: 0.78rem;
-		color: #6b7280;
-	}
-
+	.item-service { font-size: 0.78rem; color: #6b7280; }
 	.item-meta {
 		display: flex;
 		flex-wrap: wrap;
 		gap: 0.4rem;
 		margin-top: 0.25rem;
 	}
-
 	.meta-tag {
 		display: inline-flex;
 		align-items: center;
@@ -211,11 +195,7 @@
 		padding: 2px 7px;
 		border-radius: 4px;
 	}
-
-	.meta-tag i {
-		font-size: 0.75rem;
-	}
-
+	.meta-tag i { font-size: 0.75rem; }
 	.meta-tag.reason {
 		background: rgba(245, 54, 92, 0.08);
 		color: #f5365c;
@@ -236,39 +216,51 @@
 		transition: all 150ms ease;
 		color: #6b7280;
 	}
-
 	.go-btn i {
 		font-size: 1.1rem;
 		transition: transform 150ms ease;
 	}
-
 	.go-btn:hover {
 		background: #f5365c;
 		border-color: #f5365c;
 		color: white;
 	}
+	.go-btn:hover i { transform: translateX(2px); }
 
-	.go-btn:hover i {
-		transform: translateX(2px);
-	}
-
-	/* Empty */
+	/* Empty State */
 	.empty-state {
 		display: flex;
 		flex-direction: column;
 		align-items: center;
-		gap: 0.5rem;
-		padding: 2rem;
-		color: #9ba3af;
+		justify-content: center;
+		gap: 8px;
+		height: 100%;
+		padding: 2rem 1.5rem;
+		text-align: center;
 	}
-
-	.empty-state i {
-		font-size: 2rem;
-		color: #4caf50;
+	.empty-icon-wrap {
+		width: 60px;
+		height: 60px;
+		border-radius: 18px;
+		background: linear-gradient(135deg, rgba(34, 197, 94, 0.08), rgba(34, 197, 94, 0.18));
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		margin-bottom: 4px;
 	}
-
-	.empty-state p {
-		font-size: 0.85rem;
-		margin: 0;
+	.empty-icon-wrap i {
+		font-size: 28px;
+		color: #22c55e;
+	}
+	.empty-title {
+		font-size: 14px;
+		font-weight: 700;
+		color: #2d3a52;
+	}
+	.empty-sub {
+		font-size: 12px;
+		color: #9aa3b0;
+		max-width: 220px;
+		line-height: 1.5;
 	}
 </style>

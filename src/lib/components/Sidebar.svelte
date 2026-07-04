@@ -1,23 +1,15 @@
 <script>
+	import { run } from 'svelte/legacy';
+
 	import { page } from '$app/stores';
 	import SidenavToggler from '@components/template/SidenavToggler.svelte';
 	import { currentTheme } from '@constants/constant';
 	import { onMount } from 'svelte';
+	import { hasPermission } from '@functions/user_permissions';
+	import { ROLES } from '@constants/roles';
 
-	$: $page.url.pathname, detectActiveEl();
-
-	export let windowWidth;
-
-	function changeActiveLink(_activeElId) {
-		let els = document.querySelectorAll('.navs .nav-item');
-
-		els.forEach((element) => {
-			element.classList.remove('active');
-			if (element.id == _activeElId) {
-				element.classList.add('active');
-			}
-		});
-	}
+	/** @type {{windowWidth: any}} */
+	let { windowWidth } = $props();
 
 	function detectActiveEl(params) {
 		let els = document.querySelectorAll('.navs .nav-item');
@@ -44,8 +36,38 @@
 		});
 	}
 
+	const menuItems = [
+		{ type: 'link', name: 'Anasayfa', href: '/', icon: 'bx-home-alt' },
+		{ type: 'link', name: 'Randevular', href: '/reservations', icon: 'bx-calendar-event' },
+		{ type: 'link', name: 'Randevu Planları', href: '/reservation-plans', icon: 'bx-sync' },
+		{ type: 'link', name: 'Müşteriler', href: '/customers', icon: 'bx-user-pin' },
+		{ type: 'link', name: 'Finans', href: '/finance', icon: 'bx-wallet', roles: [ROLES.ADMIN] }, // Admin
+		{ type: 'separator', name: 'Tanımlar', roles: [ROLES.ADMIN] },
+		{
+			type: 'link',
+			name: 'Kaynaklar',
+			href: '/units',
+			icon: 'bx-spreadsheet',
+			roles: [ROLES.ADMIN]
+		},
+		{ type: 'link', name: 'Hizmetler', href: '/services', icon: 'bx-alarm', roles: [ROLES.ADMIN] },
+		{
+			type: 'link',
+			name: 'Departmanlar',
+			href: '/departments',
+			icon: 'bx-store',
+			roles: [ROLES.ADMIN]
+		},
+		{ type: 'separator', name: 'Firma & Panel', roles: [ROLES.ADMIN] },
+		{ type: 'link', name: 'Kullanıcılar', href: '/users', icon: 'bx-user', roles: [ROLES.ADMIN] },
+		{ type: 'link', name: 'Firma', href: '/company', icon: 'bx-buildings', roles: [ROLES.ADMIN] }
+	];
+
 	onMount(() => {
 		detectActiveEl();
+	});
+	run(() => {
+		$page.url.pathname, detectActiveEl();
 	});
 </script>
 
@@ -69,46 +91,22 @@
 
 		<div class="navs">
 			<ul>
-				<li id="nav-home" class="nav-item active">
-					<a href="/"><i class="bx bx-home-alt"></i><span>Anasayfa</span></a>
-				</li>
-				<li id="nav-reservations" class="nav-item">
-					<a href="/reservations"
-						><i class="bx bx-calendar-event"></i> <span>Rezervasyonlar</span></a
-					>
-				</li>
-				<li id="nav-reservations" class="nav-item">
-					<a href="/reservation-plans"
-						><i class="bx bx-sync"></i> <span>Rezervasyon Planları</span></a
-					>
-				</li>
-				<li id="nav-customers" class="nav-item">
-					<a href="/customers"><i class="bx bx-user-pin"></i> <span>Müşteriler</span></a>
-				</li>
-				<li id="nav-finance" class="nav-item">
-					<a href="/finance"><i class="bx bx-wallet"></i> <span>Finans</span></a>
-				</li>
-				<li class="nav-seperator">
-					<div>Tanımlar</div>
-				</li>
-				<li id="nav-units" class="nav-item">
-					<a href="/units"><i class="bx bx-spreadsheet"></i><span>Kaynaklar</span></a>
-				</li>
-				<li id="nav-services" class="nav-item">
-					<a href="/services"><i class="bx bx-alarm"></i><span>Hizmetler</span></a>
-				</li>
-				<li id="nav-departments" class="nav-item">
-					<a href="/departments"><i class="bx bx-store"></i> <span>Departmanlar</span></a>
-				</li>
-				<li class="nav-seperator">
-					<div>Firma & Panel</div>
-				</li>
-				<li id="nav-users" class="nav-item">
-					<a href="/users"><i class="bx bx-user"></i> <span>Kullanıcılar</span></a>
-				</li>
-				<li id="nav-company" class="nav-item">
-					<a href="/company"><i class="bx bx-buildings"></i> <span>Firma</span></a>
-				</li>
+				{#each menuItems as item}
+					{#if hasPermission(item)}
+						{#if item.type === 'link'}
+							<li class="nav-item">
+								<a href={item.href}>
+									<i class="bx {item.icon}"></i>
+									<span>{item.name}</span>
+								</a>
+							</li>
+						{:else if item.type === 'separator'}
+							<li class="nav-seperator">
+								<div>{item.name}</div>
+							</li>
+						{/if}
+					{/if}
+				{/each}
 			</ul>
 		</div>
 	</div>

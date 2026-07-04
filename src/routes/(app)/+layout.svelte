@@ -5,6 +5,8 @@
 	import { handleFixSidebarSize, handleSidebarCollapse } from '@functions/sidebar';
 	import { beforeNavigate } from '$app/navigation';
 	import Page from '@components/Page.svelte';
+	/** @type {{children?: import('svelte').Snippet}} */
+	let { children } = $props();
 
 	onMount(async () => {
 		windowWidth.set(window.innerWidth);
@@ -90,7 +92,7 @@
 	<div id="content" class="content w-100">
 		<div class="">
 			<Page>
-				<slot />
+				{@render children?.()}
 			</Page>
 		</div>
 	</div>

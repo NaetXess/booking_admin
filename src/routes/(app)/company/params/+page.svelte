@@ -16,7 +16,7 @@
 		{ id: 'parametreler', label: 'Genel Parametreler' },
 		{ id: 'saatler', label: 'Çalışma Gün ve Saatleri', disabled: true }
 	];
-	let currentTab = paramTabs[0].id;
+	let currentTab = $state(paramTabs[0].id);
 </script>
 
 <div class="page-header">
@@ -24,7 +24,7 @@
 		<h5 class="page-title">Firma Parametreleri</h5>
 		<p class="page-sub">Firmanın genel ayarlarını düzenleyin</p>
 	</div>
-	<button class="back-btn" on:click={() => goto('/company')}>
+	<button class="back-btn" onclick={() => goto('/company')}>
 		<i class="bx bx-arrow-back"></i>
 		Firma
 	</button>

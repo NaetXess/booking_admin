@@ -1,12 +1,12 @@
 <!-- Tooltip.svelte — Portal versiyonu -->
 <script>
-	export let text = '';
-	export let position = 'top';
+	/** @type {{text?: string, position?: string, children?: import('svelte').Snippet}} */
+	let { text = '', position = 'top', children } = $props();
 
-	let visible = false;
+	let visible = $state(false);
 	let timer;
-	let anchor; // trigger elementin ref'i
-	let tooltip; // tooltip DOM ref'i
+	let anchor = $state(); // trigger elementin ref'i
+	let tooltip = $state(); // tooltip DOM ref'i
 
 	function show() {
 		clearTimeout(timer);
@@ -51,8 +51,8 @@
 </script>
 
 <!-- Trigger -->
-<span bind:this={anchor} class="tooltip-wrap" on:mouseenter={show} on:mouseleave={hide}>
-	<slot />
+<span bind:this={anchor} class="tooltip-wrap" onmouseenter={show} onmouseleave={hide}>
+	{@render children?.()}
 </span>
 
 <!-- Portal: body'e render edilir -->
@@ -61,8 +61,8 @@
 		bind:this={tooltip}
 		class="tooltip-portal {position}"
 		class:visible
-		on:mouseenter={show}
-		on:mouseleave={hide}
+		onmouseenter={show}
+		onmouseleave={hide}
 		style="position:fixed; z-index:9999;"
 	>
 		{text}
@@ -85,7 +85,7 @@
 		font-weight: 500;
 		padding: 6px 12px;
 		border-radius: 8px;
-		white-space: nowrap;
+		white-space: pre-line;
 		pointer-events: none;
 		box-shadow: 0 4px 14px rgba(245, 54, 92, 0.35);
 		opacity: 0;
